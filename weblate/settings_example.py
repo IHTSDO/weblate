@@ -954,6 +954,14 @@ DATABASE_BACKUP = "plain"
 # Enable auto updating
 AUTO_UPDATE = False
 
+# Translation sync chunk size for memory optimization
+# This controls how many units are processed at once during translation synchronization.
+# Smaller values use less memory but may be slower for large components.
+# Default: 1000 (good balance for most components)
+# For very large components (>100k units), consider reducing to 500
+# For smaller components (<5k units), can be increased to 2000
+TRANSLATION_SYNC_CHUNK_SIZE = 1000
+
 # PGP commits signing
 WEBLATE_GPG_IDENTITY = None
 
