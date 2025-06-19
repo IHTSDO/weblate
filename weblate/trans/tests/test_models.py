@@ -30,6 +30,7 @@ from weblate.trans.models import (
     Suggestion,
     Unit,
     Vote,
+    Translation,
 )
 from weblate.trans.tests.utils import (
     RepoTestMixin,
@@ -39,6 +40,7 @@ from weblate.trans.tests.utils import (
 from weblate.utils.django_hacks import immediate_on_commit, immediate_on_commit_leave
 from weblate.utils.files import remove_tree
 from weblate.utils.state import STATE_TRANSLATED
+from unittest.mock import patch
 
 
 def fixup_languages_seq() -> None:
@@ -586,3 +588,164 @@ class ChangeTest(ModelTestCase):
             Change.objects.since_day(timezone.now() - timedelta(days=1)).count(),
             2,
         )
+
+
+class SyncModelTest(RepoTestCase):
+    """Test translation synchronization."""
+
+    @patch("weblate.trans.models.translation.Translation.get_git_blob_hash")
+    @patch("weblate.trans.models.component.Component.sync_git_repo", lambda self, *a, **kw: None)
+    def test_check_sync_with_new_units(self, mock_get_git_blob_hash):
+        """Test that check_sync correctly processes new units."""
+        # Mock the git blob hash to simulate a change
+        mock_get_git_blob_hash.return_value = "new-hash"
+
+        # Create a mock store with new units
+        store_units = {}
+        for i in range(5):
+            unit = type('Unit', (), {
+                'id_hash': i,
+                'context': f'ctx_{i}',
+                'source': f'source_{i}',
+                'locations': [],
+                'flags': '',
+                'previous_source': '',
+                'target': '',
+                'comments': '',
+                'explanation': '',
+                'fuzzy': False,
+                'translated': False,
+                'readonly': False,
+                'obsolete': False,
+                'notes': '',
+                'is_readonly': lambda self: self.readonly,
+                'is_fuzzy': lambda self, default=False: self.fuzzy,
+                'is_translated': lambda self: self.translated,
+                'is_approved': lambda self, default=False: self.translated,
+            })()
+            store_units[i] = unit
+
+        component = self.create_component()
+        language = Language.objects.get(code="en")
+        translation, created = Translation.objects.get_or_create(
+            component=component,
+            language=language,
+            defaults={
+                "filename": f"{language.code}.po",
+                "plural": language.plural_set.first(),
+            }
+        )
+
+        with patch("weblate.trans.models.translation.Translation.store") as mock_store:
+            mock_store.content_units = store_units
+            mock_store.get_plural.return_value = translation.plural
+
+            # Run check_sync
+            translation.check_sync(force=True)
+
+        # Verify that new units were created
+        self.assertEqual(translation.unit_set.count(), 5)
+
+    @patch("weblate.trans.models.translation.Translation.get_git_blob_hash")
+    @patch("weblate.trans.models.component.Component.sync_git_repo", lambda self, *a, **kw: None)
+    def test_check_sync_with_updated_units(self, mock_get_git_blob_hash):
+        """Test that check_sync correctly processes updated units."""
+        # Mock the git blob hash to simulate a change
+        mock_get_git_blob_hash.return_value = "new-hash"
+
+        # Create existing units in the database
+        component = self.create_component()
+        language = Language.objects.get(code="en")
+        translation, created = Translation.objects.get_or_create(
+            component=component,
+            language=language,
+            defaults={
+                "filename": f"{language.code}.po",
+                "plural": language.plural_set.first(),
+            }
+        )
+        for i in range(5):
+            translation.unit_set.create(
+                id_hash=i,
+                context=f"ctx_{i}",
+                source=f"source_{i}",
+                target=f"target_{i}",
+                position=i,
+            )
+
+        # Create a mock store with updated units
+        store_units = {}
+        for i in range(5):
+            unit = type('Unit', (), {
+                'id_hash': i,
+                'context': f'ctx_{i}',
+                'source': f'source_{i}',
+                'target': f'updated_target_{i}',
+                'locations': [],
+                'flags': '',
+                'previous_source': '',
+                'comments': '',
+                'explanation': '',
+                'fuzzy': False,
+                'translated': True,
+                'readonly': False,
+                'obsolete': False,
+                'notes': '',
+                'is_readonly': lambda self: self.readonly,
+                'is_fuzzy': lambda self, default=False: self.fuzzy,
+                'is_translated': lambda self: self.translated,
+                'is_approved': lambda self, default=False: self.translated,
+            })()
+            store_units[i] = unit
+
+        with patch("weblate.trans.models.translation.Translation.store") as mock_store:
+            mock_store.content_units = store_units
+            mock_store.get_plural.return_value = translation.plural
+
+            # Run check_sync
+            translation.check_sync(force=True)
+
+        # Verify that units were updated
+        for i in range(5):
+            unit = translation.unit_set.get(id_hash=i)
+            self.assertEqual(unit.target, f"updated_target_{i}")
+
+    @patch("weblate.trans.models.translation.Translation.get_git_blob_hash")
+    @patch("weblate.trans.models.component.Component.sync_git_repo", lambda self, *a, **kw: None)
+    def test_check_sync_with_deleted_units(self, mock_get_git_blob_hash):
+        """Test that check_sync correctly processes deleted units."""
+        # Mock the git blob hash to simulate a change
+        mock_get_git_blob_hash.return_value = "new-hash"
+
+        # Create existing units in the database
+        component = self.create_component()
+        language = Language.objects.get(code="en")
+        translation, created = Translation.objects.get_or_create(
+            component=component,
+            language=language,
+            defaults={
+                "filename": f"{language.code}.po",
+                "plural": language.plural_set.first(),
+            }
+        )
+        for i in range(5):
+            translation.unit_set.create(
+                id_hash=i,
+                context=f"ctx_{i}",
+                source=f"source_{i}",
+                target=f"target_{i}",
+                position=i,
+            )
+
+        # Create a mock store with no units
+        store_units = {}
+
+        with patch("weblate.trans.models.translation.Translation.store") as mock_store:
+            mock_store.content_units = store_units
+            mock_store.get_plural.return_value = translation.plural
+
+            # Run check_sync
+            translation.check_sync(force=True)
+
+        # Verify that all units were deleted
+        self.assertEqual(translation.unit_set.count(), 0)
