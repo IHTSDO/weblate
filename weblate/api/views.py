@@ -2127,7 +2127,7 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
         return Response(serializer.data, status=HTTP_201_CREATED)
 
     @extend_schema(
-        description="Add a label to multiple units by context IDs within a project.",
+        description="Add a label to multiple units by context IDs within a project. Optionally skip stats cache update for performance.",
         methods=["post"],
         request={
             "application/json": {
@@ -2139,7 +2139,8 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
                         "type": "array", 
                         "items": {"type": "string"},
                         "description": "Array of context IDs to match units"
-                    }
+                    },
+                    "skip_cache_update": {"type": "boolean", "description": "If true, skip stats cache update (advanced, default false)", "default": False}
                 },
                 "required": ["project_slug", "label_id", "context_ids"]
             }
@@ -2151,7 +2152,10 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
                 "properties": {
                     "updated_units": {"type": "integer", "description": "Number of units updated"},
                     "matched_units": {"type": "integer", "description": "Number of units that matched context IDs"},
-                    "label_id": {"type": "integer", "description": "Label ID that was added"}
+                    "label_id": {"type": "integer", "description": "Label ID that was added"},
+                    "project_slug": {"type": "string", "description": "Project slug"},
+                    "context_ids_processed": {"type": "integer", "description": "Number of context IDs processed"},
+                    "cache_update_skipped": {"type": "boolean", "description": "True if cache update was skipped"}
                 }
             }
         }
@@ -2159,13 +2163,14 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
     @action(detail=False, methods=["post"])
     @transaction.atomic
     def bulk_add_label(self, request, *args, **kwargs):
-        """Add a label to multiple units identified by context IDs within a project."""
+        """Add a label to multiple units identified by context IDs within a project. Optionally skip stats cache update."""
         user = request.user
         
         # Validate required fields
         project_slug = request.data.get("project_slug")
         label_id = request.data.get("label_id")
         context_ids = request.data.get("context_ids")
+        skip_cache_update = bool(request.data.get("skip_cache_update", False))
         
         if not all([project_slug, label_id, context_ids]):
             raise ValidationError({
@@ -2202,17 +2207,26 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
         updated_count = 0
         
         # Add label to each unit (this won't duplicate existing labels)
+        # Set batch_update flag to avoid triggering stats cache updates for each unit
         for unit in units:
             if not unit.labels.filter(id=label_id).exists():
+                unit.is_batch_update = True
                 unit.labels.add(label)
                 updated_count += 1
+        
+        # Invalidate cache once at the end for all affected components, unless skipped
+        if updated_count > 0 and not skip_cache_update:
+            affected_components = set(unit.translation.component for unit in units if unit.labels.filter(id=label_id).exists())
+            for component in affected_components:
+                component.invalidate_cache()
         
         return Response({
             "updated_units": updated_count,
             "matched_units": matched_count,
             "label_id": label_id,
             "project_slug": project_slug,
-            "context_ids_processed": len(context_ids)
+            "context_ids_processed": len(context_ids),
+            "cache_update_skipped": skip_cache_update
         }, status=HTTP_200_OK)
 
 
