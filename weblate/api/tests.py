@@ -5315,6 +5315,172 @@ class CategoryAPITest(APIBaseTest):
         request = self.do_request("api:category-statistics", category_kwargs)
         self.assertEqual(request.data["total"], 0)
 
+    def test_bulk_add_label(self) -> None:
+        """Test bulk adding labels to units by context IDs."""
+        # Create a label in the project
+        label = self.component.project.label_set.create(
+            name="test-label", color="navy", description="Test label for bulk operations"
+        )
+
+        # Get some units to work with
+        units = Unit.objects.filter(
+            translation__component=self.component,
+            translation__language_code="en"
+        )[:3]
+        
+        # Set different context values for testing
+        context_ids = []
+        for i, unit in enumerate(units):
+            unit.context = f"test-context-{i}"
+            unit.save()
+            context_ids.append(unit.context)
+
+        # Test successful bulk add
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids
+            },
+            code=200,
+            format="json",
+        )
+
+        # Verify response structure
+        self.assertIn("updated_units", response.data)
+        self.assertIn("matched_units", response.data)
+        self.assertIn("label_id", response.data)
+        self.assertIn("project_slug", response.data)
+        self.assertIn("context_ids_processed", response.data)
+
+        # Verify response values
+        self.assertEqual(response.data["label_id"], label.id)
+        self.assertEqual(response.data["project_slug"], self.component.project.slug)
+        self.assertEqual(response.data["context_ids_processed"], len(context_ids))
+        self.assertEqual(response.data["matched_units"], len(context_ids))
+        self.assertEqual(response.data["updated_units"], len(context_ids))
+
+        # Verify labels were actually added to units
+        for unit in units:
+            unit.refresh_from_db()
+            self.assertIn(label, unit.labels.all())
+
+        # Test adding the same label again (should not duplicate)
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids
+            },
+            code=200,
+            format="json",
+        )
+
+        # Should match the same units but not update any (already have the label)
+        self.assertEqual(response.data["matched_units"], len(context_ids))
+        self.assertEqual(response.data["updated_units"], 0)
+
+        # Test with non-existent project
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": "non-existent-project",
+                "label_id": label.id,
+                "context_ids": context_ids
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(any(e.get("attr") == "project_slug" for e in response.data.get("errors", [])))
+
+        # Test with non-existent label
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": 99999,
+                "context_ids": context_ids
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(any(e.get("attr") == "label_id" for e in response.data.get("errors", [])))
+
+        # Test with invalid context_ids (not a list)
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": "not-a-list"
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(any(e.get("attr") == "context_ids" for e in response.data.get("errors", [])))
+
+        # Test with missing required fields
+        response = self.do_request(
+            "api:unit-bulk-add-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                # Missing label_id and context_ids
+            },
+            code=400,
+            format="json",
+        )
+        error_attrs = [e.get("attr") for e in response.data.get("errors", [])]
+        self.assertIn("error", error_attrs)
+
+        # Test permission denied for user without unit.edit permission
+        # Create a user without any permissions on this project
+        from weblate.auth.models import User
+        no_perm_user = User.objects.create_user(
+            username="no_perm_user",
+            email="no_perm@example.com",
+            password="testpass"
+        )
+        
+        # Ensure the user has no permissions on this project
+        # Remove any default permissions that might exist
+        no_perm_user.groups.clear()
+        
+        # Authenticate as the user without permissions
+        self.client.force_authenticate(user=no_perm_user)
+        
+        response = self.client.post(
+            reverse("api:unit-bulk-add-label"),
+            {
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids
+            },
+            format="json"
+        )
+        
+
+        
+        self.assertEqual(response.status_code, 403)
+        
+        # Clean up
+        no_perm_user.delete()
+
+
+
 
 class LabelAPITest(APIBaseTest):
     def test_get_label(self) -> None:
