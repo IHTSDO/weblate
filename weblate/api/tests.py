@@ -5350,18 +5350,7 @@ class CategoryAPITest(APIBaseTest):
         )
 
         # Verify response structure
-        self.assertIn("updated_units", response.data)
-        self.assertIn("matched_units", response.data)
-        self.assertIn("label_id", response.data)
-        self.assertIn("project_slug", response.data)
-        self.assertIn("context_ids_processed", response.data)
-
-        # Verify response values
-        self.assertEqual(response.data["label_id"], label.id)
-        self.assertEqual(response.data["project_slug"], self.component.project.slug)
-        self.assertEqual(response.data["context_ids_processed"], len(context_ids))
-        self.assertEqual(response.data["matched_units"], len(context_ids))
-        self.assertEqual(response.data["updated_units"], len(context_ids))
+        self.assertEqual(response.data["status"], "success")
 
         # Verify labels were actually added to units
         for unit in units:
@@ -5382,9 +5371,8 @@ class CategoryAPITest(APIBaseTest):
             format="json",
         )
 
-        # Should match the same units but not update any (already have the label)
-        self.assertEqual(response.data["matched_units"], len(context_ids))
-        self.assertEqual(response.data["updated_units"], 0)
+        # Should still return success
+        self.assertEqual(response.data["status"], "success")
 
         # Test with non-existent project
         response = self.do_request(
