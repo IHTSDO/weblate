@@ -106,6 +106,7 @@ from weblate.trans.models import (
     Project,
     Unit,
 )
+from weblate.trans.models.label import Label
 from weblate.trans.models.translation import Translation, TranslationQuerySet
 from weblate.trans.tasks import (
     category_removal,
@@ -2124,6 +2125,95 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
 
         serializer.save()
         return Response(serializer.data, status=HTTP_201_CREATED)
+
+    @extend_schema(
+        description="Add a label to multiple units by context IDs within a project.",
+        methods=["post"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "project_slug": {"type": "string", "description": "Project slug"},
+                    "label_id": {"type": "integer", "description": "Label ID to add"},
+                    "context_ids": {
+                        "type": "array", 
+                        "items": {"type": "string"},
+                        "description": "Array of context IDs to match units"
+                    }
+                },
+                "required": ["project_slug", "label_id", "context_ids"]
+            }
+        },
+        responses={
+            200: {
+                "description": "Bulk operation completed",
+                "type": "object",
+                "properties": {
+                    "updated_units": {"type": "integer", "description": "Number of units updated"},
+                    "matched_units": {"type": "integer", "description": "Number of units that matched context IDs"},
+                    "label_id": {"type": "integer", "description": "Label ID that was added"}
+                }
+            }
+        }
+    )
+    @action(detail=False, methods=["post"])
+    @transaction.atomic
+    def bulk_add_label(self, request, *args, **kwargs):
+        """Add a label to multiple units identified by context IDs within a project."""
+        user = request.user
+        
+        # Validate required fields
+        project_slug = request.data.get("project_slug")
+        label_id = request.data.get("label_id")
+        context_ids = request.data.get("context_ids")
+        
+        if not all([project_slug, label_id, context_ids]):
+            raise ValidationError({
+                "error": "Missing required fields: project_slug, label_id, context_ids"
+            })
+        
+        if not isinstance(context_ids, list):
+            raise ValidationError({"context_ids": "Expected a list of context IDs"})
+        
+        # Get project and validate access
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            raise ValidationError({"project_slug": "Project not found"})
+        
+        if not user.has_perm("unit.edit", project):
+            self.permission_denied(request, "Can not edit units in this project")
+        
+        # Get and validate label
+        try:
+            label = project.label_set.get(id=label_id)
+        except Label.DoesNotExist:
+            raise ValidationError({
+                "label_id": f"Label with ID {label_id} was not found in project {project_slug}"
+            })
+        
+        # Find units that match any of the context IDs within this project
+        units = Unit.objects.filter(
+            translation__component__project=project,
+            context__in=context_ids
+        ).prefetch_related('labels')
+        
+        matched_count = units.count()
+        updated_count = 0
+        
+        # Add label to each unit (this won't duplicate existing labels)
+        for unit in units:
+            if not unit.labels.filter(id=label_id).exists():
+                unit.labels.add(label)
+                updated_count += 1
+        
+        return Response({
+            "updated_units": updated_count,
+            "matched_units": matched_count,
+            "label_id": label_id,
+            "project_slug": project_slug,
+            "context_ids_processed": len(context_ids)
+        }, status=HTTP_200_OK)
 
 
 @extend_schema_view(
