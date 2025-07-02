@@ -2150,12 +2150,7 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
                 "description": "Bulk operation completed",
                 "type": "object",
                 "properties": {
-                    "updated_units": {"type": "integer", "description": "Number of units updated"},
-                    "matched_units": {"type": "integer", "description": "Number of units that matched context IDs"},
-                    "label_id": {"type": "integer", "description": "Label ID that was added"},
-                    "project_slug": {"type": "string", "description": "Project slug"},
-                    "context_ids_processed": {"type": "integer", "description": "Number of context IDs processed"},
-                    "cache_update_skipped": {"type": "boolean", "description": "True if cache update was skipped"}
+                    "status": {"type": "string", "description": "Operation status", "example": "success"}
                 }
             }
         }
@@ -2201,33 +2196,30 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
         units = Unit.objects.filter(
             translation__component__project=project,
             context__in=context_ids
-        ).prefetch_related('labels')
+        )
         
-        matched_count = units.count()
-        updated_count = 0
+        # OPTIMIZATION: Find units that don't already have this label in a single query
+        units_without_label = units.exclude(labels=label)
+        unit_ids = list(units_without_label.values_list('id', flat=True))
         
-        # Add label to each unit (this won't duplicate existing labels)
-        # Set batch_update flag to avoid triggering stats cache updates for each unit
-        for unit in units:
-            if not unit.labels.filter(id=label_id).exists():
-                unit.is_batch_update = True
-                unit.labels.add(label)
-                updated_count += 1
+        if unit_ids:
+            # Bulk insert into the through table
+            through_model = Unit.labels.through
+            through_model.objects.bulk_create([
+                through_model(unit_id=unit_id, label_id=label_id)
+                for unit_id in unit_ids
+            ], ignore_conflicts=True, batch_size=1000)
+            
+            # Invalidate cache once at the end for all affected components, unless skipped
+            if not skip_cache_update:
+                # Get unique components that were affected
+                affected_components = Component.objects.filter(
+                    translation__unit__id__in=unit_ids
+                ).distinct()
+                for component in affected_components:
+                    component.invalidate_cache()
         
-        # Invalidate cache once at the end for all affected components, unless skipped
-        if updated_count > 0 and not skip_cache_update:
-            affected_components = set(unit.translation.component for unit in units if unit.labels.filter(id=label_id).exists())
-            for component in affected_components:
-                component.invalidate_cache()
-        
-        return Response({
-            "updated_units": updated_count,
-            "matched_units": matched_count,
-            "label_id": label_id,
-            "project_slug": project_slug,
-            "context_ids_processed": len(context_ids),
-            "cache_update_skipped": skip_cache_update
-        }, status=HTTP_200_OK)
+        return Response({"status": "success"}, status=HTTP_200_OK)
 
 
 @extend_schema_view(
