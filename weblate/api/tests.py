@@ -5322,12 +5322,18 @@ class CategoryAPITest(APIBaseTest):
             name="test-label", color="navy", description="Test label for bulk operations"
         )
 
-        # Get some units to work with
-        units = Unit.objects.filter(
+        # Ensure at least 3 units exist for the test
+        units = list(Unit.objects.filter(
             translation__component=self.component,
             translation__language_code="en"
-        )[:3]
-        
+        )[:3])
+        needed = 3 - len(units)
+        if needed > 0:
+            from weblate.trans.models import Translation
+            translation = self.component.translation_set.get(language_code="en")
+            for i in range(needed):
+                units.append(Unit.objects.create(translation=translation, context=f"autocreated-context-{i}", position=i, id_hash=1000 + i))
+
         # Set different context values for testing
         context_ids = []
         for i, unit in enumerate(units):
@@ -5459,8 +5465,6 @@ class CategoryAPITest(APIBaseTest):
             },
             format="json"
         )
-        
-
         
         self.assertEqual(response.status_code, 403)
         
