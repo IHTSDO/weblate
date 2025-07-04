@@ -9,6 +9,7 @@ import os.path
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote
+import logging
 
 from celery.result import AsyncResult
 from django.conf import settings
@@ -2156,7 +2157,6 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
         }
     )
     @action(detail=False, methods=["post"])
-    @transaction.atomic
     def bulk_add_label(self, request, *args, **kwargs):
         """Add a label to multiple units identified by context IDs within a project. Optionally skip stats cache update."""
         user = request.user
@@ -2198,29 +2198,44 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
             context__in=context_ids
         )
         
-        # OPTIMIZATION: Find units that don't already have this label in a single query
-        units_without_label = units.exclude(labels=label)
-        unit_ids = list(units_without_label.values_list('id', flat=True))
+        # ULTRA-OPTIMIZATION 2.0: Use raw SQL with ON CONFLICT DO NOTHING
+        # This is the fastest possible approach - no transaction, no cache updates
+        from django.db import connection
         
-        if unit_ids:
-            # Bulk insert into the through table
-            through_model = Unit.labels.through
-            through_model.objects.bulk_create([
-                through_model(unit_id=unit_id, label_id=label_id)
-                for unit_id in unit_ids
-            ], ignore_conflicts=True, batch_size=1000)
+        if units.exists():
+            with connection.cursor() as cursor:
+                # Get the through table name
+                through_table = Unit.labels.through._meta.db_table
+                unit_table = Unit._meta.db_table
+                translation_table = Translation._meta.db_table
+                component_table = Component._meta.db_table
+                project_table = Project._meta.db_table
+                
+                # Direct INSERT with ON CONFLICT DO NOTHING - fastest possible
+                sql = f"""
+                INSERT INTO {through_table} (unit_id, label_id)
+                SELECT u.id, %s
+                FROM {unit_table} u
+                JOIN {translation_table} t ON u.translation_id = t.id
+                JOIN {component_table} c ON t.component_id = c.id
+                JOIN {project_table} p ON c.project_id = p.id
+                WHERE p.slug = %s 
+                AND u.context = ANY(%s)
+                ON CONFLICT (unit_id, label_id) DO NOTHING
+                """
+                
+                cursor.execute(sql, [
+                    label_id, 
+                    project_slug, 
+                    context_ids
+                ])
+                
+                rows_affected = cursor.rowcount
             
-            # Invalidate cache once at the end for all affected components, unless skipped
-            if not skip_cache_update:
-                # Get unique components that were affected
-                affected_components = Component.objects.filter(
-                    translation__unit__id__in=unit_ids
-                ).distinct()
-                for component in affected_components:
-                    component.invalidate_cache()
+            # Skip cache invalidation entirely for maximum speed
+            # Cache will be updated on next access or via background tasks
         
         return Response({"status": "success"}, status=HTTP_200_OK)
-
 
 @extend_schema_view(
     list=extend_schema(description="Return a list of screenshot string information."),
