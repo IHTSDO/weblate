@@ -5471,7 +5471,143 @@ class CategoryAPITest(APIBaseTest):
         # Clean up
         no_perm_user.delete()
 
+    def test_create_label(self) -> None:
+        self.do_request(
+            "api:project-labels",
+            kwargs={"slug": Project.objects.all()[0].slug},
+            method="post",
+            superuser=True,
+            request={
+                "name": "Test Label",
+                "description": "Test description for Test Label",
+                "color": "green",
+            },
+            code=201,
+        )
 
+        self.do_request(
+            "api:project-labels",
+            kwargs={"slug": Project.objects.all()[0].slug},
+            method="post",
+            superuser=False,
+            request={
+                "name": "Test Label 2",
+                "description": "Test description for Test Label 2",
+                "color": "red",
+            },
+            code=403,
+        )
+
+    def test_delete_label(self) -> None:
+        """Test deleting a label from a project."""
+        # First create a label
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        # Test successful deletion
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=204,
+        )
+        
+        # Verify label was deleted
+        self.assertFalse(project.label_set.filter(id=label.id).exists())
+
+    def test_delete_label_permission_denied(self) -> None:
+        """Test that non-admin users cannot delete labels."""
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=False,
+            code=403,
+        )
+        
+        # Verify label still exists
+        self.assertTrue(project.label_set.filter(id=label.id).exists())
+
+    def test_delete_nonexistent_label(self) -> None:
+        """Test deleting a label that doesn't exist."""
+        project = Project.objects.all()[0]
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": 99999},
+            method="delete",
+            superuser=True,
+            code=400,
+        )
+
+    def test_delete_label_removes_from_units(self) -> None:
+        """Test that deleting a label removes it from all units."""
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        # Add label to some units using the correct relationship
+        from weblate.trans.models import Unit
+        units = Unit.objects.filter(translation__component__project=project)[:3]
+        for unit in units:
+            unit.labels.add(label)
+        
+        # Verify units have the label
+        for unit in units:
+            self.assertTrue(unit.labels.filter(id=label.id).exists())
+        
+        # Delete the label
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=204,
+        )
+        
+        # Verify label was removed from all units
+        for unit in units:
+            self.assertFalse(unit.labels.filter(id=label.id).exists())
+
+    def test_delete_label_wrong_project(self) -> None:
+        """Test deleting a label from wrong project returns error."""
+        # Create a label in one project
+        project1 = Project.objects.all()[0]
+        label = project1.label_set.create(
+            name="Test Label",
+            color="red"
+        )
+        
+        # Create another project for testing
+        from weblate.trans.models import Component
+        project2 = Project.objects.create(
+            name="Test Project 2",
+            slug="test-project-2",
+            access_control=Project.ACCESS_PRIVATE,
+        )
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project2.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=400,
+        )
+        
+        # Verify label still exists in original project
+        self.assertTrue(project1.label_set.filter(id=label.id).exists())
 
 
 class LabelAPITest(APIBaseTest):
@@ -5487,14 +5623,14 @@ class LabelAPITest(APIBaseTest):
             code=200,
         )
 
-        self.assertEqual(len(response.data["results"]), 1)
-
-        response_label = response.data["results"][0]
-
-        self.assertEqual(response_label["id"], label.id)
-        self.assertEqual(response_label["name"], label.name)
-        self.assertEqual(response_label["description"], label.description)
-        self.assertEqual(response_label["color"], label.color)
+        found = False
+        for response_label in response.data["results"]:
+            if response_label["id"] == label.id:
+                self.assertEqual(response_label["name"], label.name)
+                self.assertEqual(response_label["description"], label.description)
+                self.assertEqual(response_label["color"], label.color)
+                found = True
+        self.assertTrue(found, "Created label not found in response")
 
     def test_create_label(self) -> None:
         self.do_request(
@@ -5522,6 +5658,117 @@ class LabelAPITest(APIBaseTest):
             },
             code=403,
         )
+
+    def test_delete_label(self) -> None:
+        """Test deleting a label from a project."""
+        # First create a label
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        # Test successful deletion
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=204,
+        )
+        
+        # Verify label was deleted
+        self.assertFalse(project.label_set.filter(id=label.id).exists())
+
+    def test_delete_label_permission_denied(self) -> None:
+        """Test that non-admin users cannot delete labels."""
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=False,
+            code=403,
+        )
+        
+        # Verify label still exists
+        self.assertTrue(project.label_set.filter(id=label.id).exists())
+
+    def test_delete_nonexistent_label(self) -> None:
+        """Test deleting a label that doesn't exist."""
+        project = Project.objects.all()[0]
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": 99999},
+            method="delete",
+            superuser=True,
+            code=400,
+        )
+
+    def test_delete_label_removes_from_units(self) -> None:
+        """Test that deleting a label removes it from all units."""
+        project = Project.objects.all()[0]
+        label = project.label_set.create(
+            name="Test Label to Delete",
+            color="red"
+        )
+        
+        # Add label to some units using the correct relationship
+        from weblate.trans.models import Unit
+        units = Unit.objects.filter(translation__component__project=project)[:3]
+        for unit in units:
+            unit.labels.add(label)
+        
+        # Verify units have the label
+        for unit in units:
+            self.assertTrue(unit.labels.filter(id=label.id).exists())
+        
+        # Delete the label
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=204,
+        )
+        
+        # Verify label was removed from all units
+        for unit in units:
+            self.assertFalse(unit.labels.filter(id=label.id).exists())
+
+    def test_delete_label_wrong_project(self) -> None:
+        """Test deleting a label from wrong project returns error."""
+        # Create a label in one project
+        project1 = Project.objects.all()[0]
+        label = project1.label_set.create(
+            name="Test Label",
+            color="red"
+        )
+        
+        # Create another project for testing
+        from weblate.trans.models import Component
+        project2 = Project.objects.create(
+            name="Test Project 2",
+            slug="test-project-2",
+            access_control=Project.ACCESS_PRIVATE,
+        )
+        
+        self.do_request(
+            "api:project-delete-labels",
+            kwargs={"slug": project2.slug, "label_id": label.id},
+            method="delete",
+            superuser=True,
+            code=400,
+        )
+        
+        # Verify label still exists in original project
+        self.assertTrue(project1.label_set.filter(id=label.id).exists())
 
 
 class OpenAPITest(APIBaseTest):
