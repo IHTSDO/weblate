@@ -230,6 +230,10 @@ class BatchMachineTranslation:
     def map_language_code(self, code: str) -> str:
         """Map language code to service specific."""
         code = code.removesuffix("_devel")
+        # Fix custom language codes, used by some installations for user separation
+        # e.g., fr-48888888100 -> fr, en_GB-48888888100 -> en_GB
+        code = re.sub(r'-\d+$', '', code)
+        
         if code in self.language_map:
             return self.language_map[code]
         return code
