@@ -133,6 +133,10 @@ def download(request: AuthenticatedHttpRequest, path):
 
             kwargs["query_string"] = form.cleaned_data.get("q", "")
             kwargs["fmt"] = form.cleaned_data["format"]
+        
+        # Pass fields parameter if present
+        if "fields" in request.GET:
+            kwargs["fields"] = request.GET["fields"]
 
         return download_translation_file(request, obj, **kwargs)
     if isinstance(obj, ProjectLanguage):
