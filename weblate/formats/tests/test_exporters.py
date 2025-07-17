@@ -539,3 +539,172 @@ class MultiCSVExporterTest(PoExporterTest):
         finally:
             # Clean up the temporary directory
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def test_fields_parameter(self) -> None:
+        lang = Language.objects.create(code="xy")
+        plural = Plural.objects.create(language=lang)
+        project = Project(slug="test")
+        component = Component(
+            slug="comp",
+            project=project,
+            file_format="csv",
+            source_language=Language.objects.get(code="en"),
+        )
+        translation = Translation(language=lang, component=component, plural=plural)
+        translation.store = EmptyFormat(NamedBytesIO("", b""))
+        unit = Unit(
+            translation=translation,
+            id_hash=-1,
+            pk=-1,
+            source="source-value",
+            target="target-value",
+            context="context-value",
+        )
+        unit.source_unit = unit
+        unit.__dict__["unresolved_comments"] = []
+        exporter = MultiCSVExporter(translation=translation, fieldnames=["context", "target"])
+        exporter.add_unit(unit)
+        output = exporter.serialize().decode("utf-8")
+        lines = [line.strip() for line in output.strip().split("\n")]
+        assert lines[0] == "context,target"
+        assert lines[1] == "context-value,target-value"
+
+    def test_fields_parameter_api_integration(self):
+        """Test fields parameter with actual web request to API endpoint."""
+        from django.test import Client
+        from django.urls import reverse
+        from weblate.trans.models import Unit
+        
+        # Create test data
+        lang = Language.objects.create(code="test-cs-api")
+        plural = Plural.objects.create(language=lang, number=1, formula="0")
+        
+        project = Project(slug="test-project-api")
+        project.save()
+        
+        # Use git but patch VCS methods to avoid actual git operations
+        component = Component(
+            slug="test-component-api",
+            project=project,
+            file_format="csv",
+            filemask="dummy",
+            template="",
+            new_base="",
+            vcs="git",
+            repo="/tmp",  # dummy path
+            push="",
+            branch="",
+        )
+        import types
+        component.sync_git_repo = types.MethodType(lambda self, *a, **kw: None, component)
+        component.set_default_branch = types.MethodType(lambda self, *a, **kw: None, component)
+        component.save()
+        
+        translation = Translation(language=lang, component=component, plural=plural)
+        translation.save()
+        
+        # Create test units
+        unit1 = Unit(
+            translation=translation,
+            source="Hello, world!",
+            target="Ahoj, světe!",
+            context="hello",
+            location="test.csv:1",
+            note="Test note",
+            flags="",
+            explanation="Test explanation",
+            state=20,  # STATE_TRANSLATED
+            position=1,
+            id_hash=12345
+        )
+        unit1.__dict__["unresolved_comments"] = []
+        unit1.save()
+        unit1.source_unit = unit1
+        unit1.save()
+        
+        unit2 = Unit(
+            translation=translation,
+            source="Goodbye, world!",
+            target="Sbohem, světe!",
+            context="goodbye",
+            location="test.csv:2",
+            note="Another test note",
+            flags="",
+            explanation="Another test explanation",
+            state=20,  # STATE_TRANSLATED
+            position=2,
+            id_hash=67890
+        )
+        unit2.__dict__["unresolved_comments"] = []
+        unit2.save()
+        unit2.source_unit = unit2
+        unit2.save()
+        
+        # Test the API with fields parameter using web request
+        client = Client()
+        
+        # Build the URL for the download API
+        url = reverse('download', kwargs={
+            'path': translation.get_url_path()
+        })
+        
+        # Add query parameters
+        url += "?format=csv-multi&fields=context,target"
+        
+        print(f"Testing URL: {url}")
+        
+        # Make the request
+        response = client.get(url)
+        
+        print(f"Response status: {response.status_code}")
+        print(f"Content-Type: {response['Content-Type']}")
+        
+        content = response.content.decode('utf-8')
+        print(f"Content length: {len(content)}")
+        print(f"First 500 chars: {content[:500]}")
+        
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        
+        # Parse CSV content
+        lines = content.split('\n')
+        if not lines or not lines[0].strip():
+            self.fail("No content in response")
+        
+        header = lines[0]
+        print(f"Header: {header}")
+        
+        # Parse header fields
+        import csv
+        from io import StringIO
+        
+        csv_reader = csv.reader(StringIO(header))
+        header_fields = next(csv_reader)
+        
+        print(f"Parsed header fields: {header_fields}")
+        
+        # Check that only the specified fields are present
+        expected_fields = ["context", "target"]
+        actual_fields = [field.strip() for field in header_fields if field.strip()]
+        
+        print(f"Expected fields: {expected_fields}")
+        print(f"Actual fields: {actual_fields}")
+        
+        # Verify the fields match (order doesn't matter)
+        self.assertEqual(set(actual_fields), set(expected_fields), 
+                       f"Expected fields {expected_fields}, got {actual_fields}")
+        
+        # Verify we have data rows
+        data_lines = [line for line in lines[1:] if line.strip()]
+        self.assertGreater(len(data_lines), 0, "No data rows found")
+        
+        print(f"Found {len(data_lines)} data rows")
+        
+        # Clean up
+        translation.delete()
+        component.delete()
+        project.delete()
+        lang.delete()
+        
+        print("✅ SUCCESS: Fields parameter works correctly with web request!")

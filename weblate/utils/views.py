@@ -541,6 +541,7 @@ def download_translation_file(
     translation: Translation,
     fmt: str | None = None,
     query_string: str | None = None,
+    fields: str | None = None,
 ):
     response = handle_last_modified(request, translation.stats)
     if response is not None:
@@ -555,7 +556,7 @@ def download_translation_file(
         if not exporter_cls.supports(translation):
             msg = "File format is not compatible with this translation"
             raise Http404(msg)
-        exporter = exporter_cls(translation=translation)
+        exporter = exporter_cls(translation=translation, fields=fields.split(",") if fields else None)
         units = translation.unit_set.prefetch_full().order_by("position")
         if query_string:
             units = units.search(query_string)

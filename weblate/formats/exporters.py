@@ -219,6 +219,32 @@ class MoExporter(PoExporter):
 class CVSBaseExporter(BaseExporter):
     storage_class = csvfile
 
+    def __init__(
+        self,
+        project=None,
+        source_language=None,
+        language=None,
+        url=None,
+        translation=None,
+        fieldnames=None,
+        fields=None,
+    ) -> None:
+        super().__init__(
+            project=project,
+            source_language=source_language,
+            language=language,
+            url=url,
+            translation=translation,
+            fieldnames=fieldnames,
+        )
+        # Handle fields parameter for custom field selection
+        if fields and not self.fieldnames:
+            # Use the specified fields as fieldnames
+            self.fieldnames = fields
+        elif not self.fieldnames:
+            # Set default fieldnames for CSV export
+            self.fieldnames = ["location", "source", "target", "id", "fuzzy", "context", "translator_comments", "developer_comments"]
+
     def get_storage(self):
         storage = self.storage_class(fieldnames=self.fieldnames)
         # Use Excel dialect instead of translate-toolkit "default" to avoid
