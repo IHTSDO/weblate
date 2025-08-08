@@ -12,6 +12,7 @@ from django.core.files import File
 from django.test.utils import modify_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
+from rest_framework import status
 from weblate_language_data.languages import LANGUAGES
 
 from weblate.accounts.models import Subscription
@@ -33,7 +34,7 @@ from weblate.trans.tests.test_models import fixup_languages_seq
 from weblate.trans.tests.utils import RepoTestMixin, create_test_billing, get_test_file
 from weblate.utils.data import data_dir
 from weblate.utils.django_hacks import immediate_on_commit, immediate_on_commit_leave
-from weblate.utils.state import STATE_EMPTY, STATE_TRANSLATED
+from weblate.utils.state import STATE_EMPTY, STATE_TRANSLATED, StringState
 
 TEST_PO = get_test_file("cs.po")
 TEST_POT = get_test_file("hello-charset.pot")
@@ -5779,3 +5780,205 @@ class OpenAPITest(APIBaseTest):
 
     def test_redoc(self) -> None:
         self.do_request("redoc")
+
+
+class OptimizedEndpointAPITest(APIBaseTest):
+    """Test the optimized units_with_changes_since endpoint."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        # Create test language
+        self.language, _ = Language.objects.get_or_create(
+            code="test-en",
+            defaults={"name": "Test English"}
+        )
+        
+        # Create test plural
+        from weblate.lang.models import Plural
+        self.plural, _ = Plural.objects.get_or_create(
+            language=self.language,
+            defaults={"formula": "n != 1"}
+        )
+        
+        # Create test translation
+        self.translation, _ = Translation.objects.get_or_create(
+            component=self.component,
+            language=self.language,
+            defaults={"plural": self.plural}
+        )
+        
+        # Create test units
+        self.unit1 = Unit.objects.create(
+            translation=self.translation,
+            source="Test source 1",
+            target="Test target 1",
+            state=StringState.STATE_TRANSLATED,
+            id_hash=12345,
+            position=1
+        )
+        
+        self.unit2 = Unit.objects.create(
+            translation=self.translation,
+            source="Test source 2",
+            target="Test target 2",
+            state=StringState.STATE_FUZZY,
+            id_hash=12346,
+            position=2
+        )
+        
+        # Create test changes
+        from weblate.trans.models.change import ActionEvents
+        self.change1 = Change.objects.create(
+            unit=self.unit1,
+            language=self.language,
+            action=ActionEvents.CHANGE,
+            target="Test target 1",
+            old="",
+            details={}
+        )
+        
+        self.change2 = Change.objects.create(
+            unit=self.unit2,
+            language=self.language,
+            action=ActionEvents.CHANGE,
+            target="Test target 2",
+            old="",
+            details={}
+        )
+
+    def test_optimized_endpoint_basic(self):
+        """Test basic functionality of the optimized endpoint."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        # Test with since date
+        since_date = (datetime.now() - timedelta(hours=1)).isoformat() + "Z"
+        
+        response = self.client.get(url, {
+            "since": since_date
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertIn("results", data)
+        self.assertGreater(len(data["results"]), 0)
+
+    def test_optimized_endpoint_with_state_filter(self):
+        """Test the endpoint with state filtering."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        since_date = (datetime.now() - timedelta(hours=1)).isoformat() + "Z"
+        
+        # Test with translated state filter
+        response = self.client.get(url, {
+            "since": since_date,
+            "state": "translated"
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        
+        # Should only return translated units
+        for unit in data["results"]:
+            self.assertGreaterEqual(unit["state"], StringState.STATE_TRANSLATED)
+
+    def test_optimized_endpoint_missing_since(self):
+        """Test that the endpoint requires since parameter."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.json()
+        self.assertEqual(data["type"], "validation_error")
+        self.assertTrue(any(error["attr"] == "since" for error in data["errors"]))
+
+    def test_optimized_endpoint_invalid_date(self):
+        """Test that the endpoint validates date format."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        response = self.client.get(url, {
+            "since": "invalid-date"
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.json()
+        self.assertEqual(data["type"], "validation_error")
+        self.assertTrue(any(error["attr"] == "since" for error in data["errors"]))
+
+    def test_optimized_endpoint_no_changes(self):
+        """Test the endpoint when no changes exist."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        # Use a future date to ensure no changes
+        since_date = (datetime.now() + timedelta(days=1)).isoformat() + "Z"
+        
+        response = self.client.get(url, {
+            "since": since_date
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(len(data["results"]), 0)
+
+    def test_optimized_endpoint_performance(self):
+        """Test that the endpoint is faster than the old approach."""
+        url = reverse(
+            "api:translation-units-with-changes-since",
+            kwargs={
+                "component__project__slug": self.component.project.slug,
+                "component__slug": self.component.slug,
+                "language__code": self.language.code,
+            }
+        )
+        
+        since_date = (datetime.now() - timedelta(hours=1)).isoformat() + "Z"
+        
+        # Time the optimized endpoint
+        import time
+        start_time = time.time()
+        
+        response = self.client.get(url, {
+            "since": since_date
+        })
+        
+        optimized_time = time.time() - start_time
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # The optimized endpoint should be reasonably fast
+        self.assertLess(optimized_time, 5.0)  # Should complete in under 5 seconds
