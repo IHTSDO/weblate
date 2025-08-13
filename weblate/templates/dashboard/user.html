@@ -41,6 +41,11 @@
         </a>
       </li>
     {% endfor %}
+    {% if translation_sets %}
+      <li {% active_link "translation-sets" %}>
+        <a href="#translation-sets" data-toggle="tab">{% translate "Translation Sets" %} <span class="badge">{{ total_labels }}</span></a>
+      </li>
+    {% endif %}
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
         {% translate "Insights" %} <span class="caret"></span>
@@ -117,6 +122,63 @@
       </div>
     {% endfor %}
 
+    {% if translation_sets %}
+      <div {% active_tab "translation-sets" %}>
+        {% for translation_set in translation_sets %}
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">
+                <a href="{{ translation_set.language.get_absolute_url }}">{{ translation_set.language }}</a>
+              </h4>
+            </div>
+            <div class="panel-body">
+              <table class="sort table progress-table autocolspan table-listing">
+                <thead class="sticky-header">
+                  <tr>
+                    <th class="sort-skip"></th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell">
+                      {% translate "Project" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell">
+                      {% translate "Label" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="number sort-cell">
+                      {% translate "Strings" %}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for label in translation_set.labels %}
+                    <tr>
+                      <td class="actions">
+                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}"
+                           class="btn btn-link green"
+                           title="{% translate "Translate" %}"
+                           alt="{% translate "Translate" %}">{% icon "pencil.svg" %}</a>
+                      </td>
+                      <th class="object-link">
+                        <a href="{{ label.project.get_absolute_url }}">{{ label.project.name }}</a>
+                      </th>
+                      <td>
+                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}">
+                          <span class="label label-{{ label.color }}" title="{{ label.description }}">{% translate label.name %}</span>
+                        </a>
+                      </td>
+                      <td class="number">
+                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}">
+                          {{ label.string_count }}
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     <div class="tab-pane" id="search">
 
       <form action="{% url 'search' %}" method="get" data-persist="search-index">
@@ -177,3 +239,4 @@
   </div>
 
 {% endblock content %}
+

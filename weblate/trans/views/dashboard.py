@@ -18,10 +18,11 @@ from django.utils.translation import gettext
 from django.views.decorators.cache import never_cache
 
 from weblate.accounts.models import Profile
+from weblate.auth.data import SELECTION_ALL
 from weblate.lang.models import Language
 from weblate.metrics.models import Metric
 from weblate.trans.forms import ReportsForm, SearchForm
-from weblate.trans.models import Component, ComponentList, Project, Translation
+from weblate.trans.models import Component, ComponentList, Project, Translation, Label
 from weblate.trans.models.component import translation_prefetch_tasks
 from weblate.trans.models.project import prefetch_project_flags
 from weblate.trans.models.translation import GhostTranslation, TranslationQuerySet
@@ -74,6 +75,83 @@ def get_suggestions(
         if result:
             return result
     return get_untranslated(prefetch_stats(base), 10)
+
+
+def get_user_accessible_languages(user: User):
+    """Get languages the user has access to through their groups."""
+    if not user.is_authenticated:
+        return []
+    
+    accessible_languages = set()
+    
+    for group in user.cached_groups:
+        # Skip groups with 2FA enforcement if user doesn't have 2FA
+        if group.enforced_2fa and not user.profile.has_2fa:
+            continue
+            
+        # If group has access to all languages, add all languages
+        if group.language_selection == SELECTION_ALL:
+            from weblate.lang.models import Language
+            all_languages = Language.objects.all()
+            accessible_languages.update(all_languages)
+        else:
+            # Add specific languages from the group
+            accessible_languages.update(group.languages.all())
+    
+    return list(accessible_languages)
+
+
+def get_translation_sets(user: User):
+    """Get translation sets organized by user accessible languages."""
+    if not user.is_authenticated:
+        return []
+    
+    # Get languages user has access to through groups
+    accessible_languages = get_user_accessible_languages(user)
+    if not accessible_languages:
+        return []
+    
+    # Get all labels for projects user has access to
+    labels = Label.objects.filter(
+        project__in=user.allowed_projects
+    ).annotate(string_count=Count("unit__id")).filter(
+        string_count__gt=0
+    ).select_related("project").order_by("project__name", "name")
+    
+    # Group labels by accessible languages
+    translation_sets = []
+    for language in accessible_languages:
+        language_labels = []
+        
+        for label in labels:
+            # Parse label name to extract languageId
+            # Label format: {EditionID}_{languageId}_{some-long-label-name}
+            label_parts = label.name.split('_')
+            if len(label_parts) >= 2:
+                label_language_id = label_parts[1]
+                
+                # Parse language code to extract languageId
+                # Language format: {languageCode}-{languageId}
+                language_parts = language.code.split('-')
+                if len(language_parts) >= 2:
+                    language_id = language_parts[1]
+                    
+                    # Match if languageId matches
+                    if label_language_id == language_id:
+                        language_labels.append(label)
+        
+        if language_labels:
+            # Add URL path to each label
+            for label in language_labels:
+                # Create the path as a list: [project_slug, '-', language_code]
+                label.translate_url_path = [label.project.slug, '-', language.code]
+            
+            translation_sets.append({
+                'language': language,
+                'labels': language_labels
+            })
+    
+    return translation_sets
 
 
 def guess_user_language(
@@ -303,6 +381,9 @@ def dashboard_user(request: AuthenticatedHttpRequest) -> HttpResponse:
     else:
         owned = Project.objects.none()
 
+    translation_sets = get_translation_sets(request.user)
+    total_labels = sum(len(translation_set['labels']) for translation_set in translation_sets)
+    
     return render(
         request,
         "dashboard/user.html",
@@ -323,6 +404,8 @@ def dashboard_user(request: AuthenticatedHttpRequest) -> HttpResponse:
             "reports_form": ReportsForm({}),
             "all_owned_projects": owned,
             "owned_projects": prefetch_project_flags(prefetch_stats(owned[:10])),
+            "translation_sets": translation_sets,
+            "total_labels": total_labels,
         },
     )
 
@@ -352,3 +435,4 @@ def dashboard_anonymous(request: AuthenticatedHttpRequest) -> HttpResponse:
             )["public_projects"],
         },
     )
+
