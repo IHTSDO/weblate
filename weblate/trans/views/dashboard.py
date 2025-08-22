@@ -140,6 +140,8 @@ def get_translation_sets(user: User):
             for label in language_labels:
                 # Create the path as a list: [project_slug, '-', language_code]
                 label.translate_url_path = [label.project.slug, '-', language.code]
+                # Store label name separately for the new URL pattern
+                label.label_name = label.name
             
             translation_sets.append({
                 'language': language,

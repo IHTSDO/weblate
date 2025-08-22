@@ -15,109 +15,16 @@
   {% perm 'reports.view' None as user_can_view_reports %}
 
   <ul class="nav nav-pills">
-    <li {% active_link "your-subscriptions" %}>
-      <a href="#your-subscriptions" data-toggle="tab">{% translate "Watched translations" %} <span class="badge">{{ usersubscriptions.paginator.count }}</span></a>
-    </li>
-    {% if all_componentlists %}
-      <li {% active_link "componentlists" %}>
-        <a href="#componentlists" data-toggle="tab">{% translate "Component lists" %} <span class="badge">{{ all_componentlists|length }}</span></a>
-      </li>
-    {% endif %}
-    <li {% active_link "suggestions" %}>
-      <a href="#suggestions" data-toggle="tab">{% translate "Suggested translations" %} <span class="badge">{{ suggestions|length }}</span></a>
-    </li>
-    {% if owned_projects %}
-      <li {% active_link "managed" %}>
-        <a href="#managed" data-toggle="tab">{% translate "Managed projects" %} <span class="badge">{{ all_owned_projects|length }}</span></a>
-      </li>
-    {% endif %}
-    {% for componentlist in componentlists %}
-      <li {% active_link componentlist.tab_slug %}>
-        <a href="#{{ componentlist.tab_slug }}" data-toggle="tab">{{ componentlist.name }} <span class="badge">{{ componentlist.translations|length }}</span></a>
-      </li>
-    {% endfor %}
     {% if translation_sets %}
-      <li {% active_link "translation-sets" %}>
+      <li class="active">
         <a href="#translation-sets" data-toggle="tab">{% translate "Translation Sets" %} <span class="badge">{{ total_labels }}</span></a>
       </li>
     {% endif %}
-    <li class="dropdown">
-      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Insights" %} <span class="caret"></span>
-      </a>
-      <ul class="dropdown-menu">
-        <li>
-          <a href="{% url 'changes' %}">{% translate "History" %}</a>
-        </li>
-        <li>
-          <a href="{% url 'changes' %}?action=51&amp;action=50">{% translate "Recent additions" %}</a>
-        </li>
-        <li>
-          <a href="{% url 'stats' %}">{% translate "Statistics" %}</a>
-        </li>
-        <li>
-          <a href="#reports" data-toggle="tab">{% translate "Translation reports" %}</a>
-        </li>
-      </ul>
-    </li>
-    <li>
-      <a href="#search" data-toggle="tab">{% translate "Search" %}</a>
-    </li>
   </ul>
 
   <div class="tab-content">
-    <div {% active_tab "your-subscriptions" %}>
-      {% if watched_projects %}
-        {% if usersubscriptions %}
-          {% include "snippets/list-objects.html" with objects=usersubscriptions label=_("Translation") hide_completed=user.profile.hide_completed name_source="translation" %}
-
-          {% include "paginator.html" with page_obj=usersubscriptions anchor="your-subscriptions" %}
-        {% else %}
-          {% include "list-projects.html" with projects=watched_projects %}
-        {% endif %}
-      {% else %}
-        <p class="help-block">
-          {% translate "Choose what languages you want in the preferences, to see overview of available translations for those languages in your watched projects." %}
-        </p>
-      {% endif %}
-    </div>
-
-
-    {% if all_componentlists %}
-      <div {% active_tab "componentlists" %}>
-        {% include "snippets/list-objects.html" with objects=all_componentlists label=_("Component list") %}
-      </div>
-    {% endif %}
-
-    {% if owned_projects %}
-      <div {% active_tab "managed" %}>
-        {% include "snippets/list-objects.html" with objects=owned_projects label=_("Project") %}
-        {% if all_owned_projects|length > 10 %}
-          <a href="{% url 'projects' %}?owned={{ user.username }}" class="btn btn-primary">{% translate "Browse all managed projects" %}</a>
-        {% endif %}
-      </div>
-    {% endif %}
-
-    {# Suggested translations #}
-    <div {% active_tab "suggestions" %}>
-      {% if suggestions %}
-        {% include "snippets/list-objects.html" with objects=suggestions label=_("Translation") name_source="translation" %}
-      {% else %}
-        <p class="help-block">
-          {% translate "Could not find any suggestions for you, please choose your languages in the preferences to get some." %}
-        </p>
-      {% endif %}
-    </div>
-
-
-    {% for componentlist in componentlists %}
-      <div {% active_tab componentlist.tab_slug %}>
-        {% include "snippets/list-objects.html" with objects=componentlist.translations label=_("Translation") name_source="translation" %}
-      </div>
-    {% endfor %}
-
     {% if translation_sets %}
-      <div {% active_tab "translation-sets" %}>
+      <div class="tab-pane active">
         {% for translation_set in translation_sets %}
           <div class="panel panel-default">
             <div class="panel-heading">
@@ -129,14 +36,10 @@
               <table class="sort table progress-table autocolspan table-listing">
                 <thead class="sticky-header">
                   <tr>
-                    <th class="sort-skip"></th>
                     <th title="{% translate "Sort this column" %}" class="sort-cell">
-                      {% translate "Project" %}
+                      {% translate "Translation Sets" %}
                     </th>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell">
-                      {% translate "Label" %}
-                    </th>
-                    <th title="{% translate "Sort this column" %}" class="number sort-cell">
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 50%; text-align: left;">
                       {% translate "Strings" %}
                     </th>
                   </tr>
@@ -144,22 +47,19 @@
                 <tbody>
                   {% for label in translation_set.labels %}
                     <tr>
-                      <td class="actions">
-                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}"
-                           class="btn btn-link green"
-                           title="{% translate "Translate" %}"
-                           alt="{% translate "Translate" %}">{% icon "pencil.svg" %}</a>
-                      </td>
-                      <th class="object-link">
-                        <a href="{{ label.project.get_absolute_url }}">{{ label.project.name }}</a>
-                      </th>
                       <td>
-                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}">
-                          <span class="label label-{{ label.color }}" title="{{ label.description }}">{% translate label.name %}</span>
+                        <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}">
+                          <span class="label label-{{ label.color }}" title="{{ label.description }}">
+                            {% if label.description %}
+                              {% translate label.description %}
+                            {% else %}
+                              {% translate label.name %}
+                            {% endif %}
+                          </span>
                         </a>
                       </td>
-                      <td class="number">
-                        <a href="{% url 'translate' path=label.translate_url_path %}?q={{ label.filter_name|urlencode }}">
+                      <td class="number" style="width: 50%; text-align: left;">
+                        <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}">
                           {{ label.string_count }}
                         </a>
                       </td>
@@ -173,13 +73,6 @@
       </div>
     {% endif %}
 
-    <div class="tab-pane" id="search">
-
-      <form action="{% url 'search' %}" method="get" data-persist="search-index">
-        {% include "snippets/search-form.html" %}
-      </form>
-
-    </div>
 
     <div class="tab-pane" id="reports">
       {% if not user_can_view_reports %}
