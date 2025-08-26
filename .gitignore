@@ -15,6 +15,7 @@ weblate-*.tar.*
 *.sublime-*
 .vscode/*
 /weblate.egg-info/
+/snowlate.egg-info/
 /build/
 /data/
 /data-test/
@@ -23,6 +24,7 @@ weblate-*.tar.*
 /.venv
 /.venv*
 /venv
+/build_env/
 *.DS_Store
 /weblate-env/
 /test-images/

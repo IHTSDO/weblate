@@ -166,14 +166,18 @@ dependencies = [
   "weblate-language-data>=2025.2",
   "weblate-schemas==2025.4"
 ]
-description = "A web-based continuous localization system with tight version control integration"
+description = "A specialized translation tool for SNOMED CT terminology translation and management, based on Weblate"
 keywords = [
   "gettext",
   "git",
   "i18n",
   "l10n",
   "mercurial",
-  "translate"
+  "translate",
+  "snomed",
+  "medical",
+  "terminology",
+  "healthcare"
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -256,6 +260,8 @@ Homepage = "https://weblate.org/"
 "Release Notes" = "https://docs.weblate.org/en/latest/changes.html"
 "Source Code" = "https://github.com/WeblateOrg/weblate"
 X = "https://x.com/WeblateOrg"
+"SNOMED CT" = "https://www.snomed.org/"
+"Simplex" = "https://simplex.ihtsdotools.org/"
 
 [tool.check-manifest]
 ignore = [
