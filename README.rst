@@ -1,9 +1,10 @@
 .. image:: https://s.weblate.org/cdn/Logo-Darktext-borders.png
-   :alt: Weblate
+   :alt: Snowlate
    :target: https://weblate.org/
    :height: 80px
 
-**Weblate is libre software web-based continuous localization system,
+**Snowlate is a translation tool for SNOMED CT, based on the open source Weblate project.
+Weblate is libre software web-based continuous localization system,
 used by over 2500 libre projects and companies in more than 165 countries.**
 
 Install it, or use the Hosted Weblate service at `weblate.org`_.
@@ -34,11 +35,16 @@ Install it, or use the Hosted Weblate service at `weblate.org`_.
     :alt: License
     :target: https://github.com/WeblateOrg/weblate/blob/main/COPYING
 
+About Snowlate
+--------------
+
+Snowlate is a specialized translation tool designed for SNOMED CT (Systematized Nomenclature of Medicine -- Clinical Terms) terminology translation and management. It is built on top of the robust and proven Weblate platform, leveraging its powerful localization capabilities while adding specific features tailored for medical terminology translation.
+
 Support
 -------
 
-Weblate is libre software with optional professional support and cloud
-hosting offerings. Check out https://weblate.org/hosting/ for more information.
+Snowlate is based on Weblate, which is libre software. 
+SNOMED International provides a hosted version of Snowlate through the open access SNOMED CT extension tool [Simplex](https://simplex.ihtsdotools.org/).
 
 Documentation
 -------------
