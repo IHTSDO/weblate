@@ -14192,8 +14192,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "PHP strings"
-msgid "Nearby strings"
-msgstr "PHP strings"
+msgid "Concept Hierarchy Order"
+msgstr "Thứ tự phân cấp khái niệm"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

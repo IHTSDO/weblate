@@ -13213,8 +13213,8 @@ msgid "Messages placed around this one"
 msgstr "Сообщения находящиеся около этого"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Соседние строки"
+msgid "Concept Hierarchy Order"
+msgstr "Порядок иерархии концепций"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

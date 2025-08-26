@@ -14909,8 +14909,8 @@ msgid "Messages placed around this one"
 msgstr "Osy bir aınalasyndaǵy habarlar"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Janyndaǵy joldar"
+msgid "Concept Hierarchy Order"
+msgstr "Түсінік иерархиясының реті"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

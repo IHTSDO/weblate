@@ -14116,8 +14116,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Search"
-msgid "Nearby strings"
-msgstr "Որոնում"
+msgid "Concept Hierarchy Order"
+msgstr "Հասկացության հիերարխիայի կարգ"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

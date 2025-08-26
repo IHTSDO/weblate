@@ -13609,8 +13609,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source strings"
-msgid "Nearby strings"
-msgstr "ប្រភព​ខ្សែអក្សរ"
+msgid "Concept Hierarchy Order"
+msgstr "លំដាប់ឋានានុក្រមគំនិត"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

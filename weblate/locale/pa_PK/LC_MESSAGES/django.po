@@ -12547,8 +12547,8 @@ msgid "Messages placed around this one"
 msgstr ""
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr ""
+msgid "Concept Hierarchy Order"
+msgstr "ਧਾਰਨਾ ਦੀ ਲੜੀਬੱਧ ਕ੍ਰਮ"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

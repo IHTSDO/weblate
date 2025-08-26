@@ -13003,8 +13003,8 @@ msgid "Messages placed around this one"
 msgstr "Řetězce umístěné okolo tohoto"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Okolní řetězce"
+msgid "Concept Hierarchy Order"
+msgstr "Pořadí Hierarchie Konceptů"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

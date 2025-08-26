@@ -14418,8 +14418,8 @@ msgid "Messages placed around this one"
 msgstr "الرسائل يتم وضعها حول هذا فقط"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "السلاسل القريبة"
+msgid "Concept Hierarchy Order"
+msgstr "ترتيب التسلسل الهرمي للمفاهيم"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

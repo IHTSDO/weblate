@@ -13197,8 +13197,8 @@ msgid "Messages placed around this one"
 msgstr "Az ezt körülvevő üzenetek"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Szomszédos szövegek"
+msgid "Concept Hierarchy Order"
+msgstr "Koncepció Hierarchia Sorrend"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

@@ -12986,8 +12986,8 @@ msgid "Messages placed around this one"
 msgstr "இதைச் சுற்றி செய்திகள் வைக்கப்பட்டுள்ளன"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "அருகிலுள்ள சரங்கள்"
+msgid "Concept Hierarchy Order"
+msgstr "கருத்து படிநிலை வரிசை"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

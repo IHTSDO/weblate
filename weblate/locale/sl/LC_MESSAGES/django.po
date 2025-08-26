@@ -14808,8 +14808,8 @@ msgid "Messages placed around this one"
 msgstr "Sporočila, ki se nahajajo ob tem sporočilu"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Bližnji nizi"
+msgid "Concept Hierarchy Order"
+msgstr "Vrstni red hierarhije konceptov"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

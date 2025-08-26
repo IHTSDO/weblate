@@ -13049,8 +13049,8 @@ msgid "Messages placed around this one"
 msgstr "Reťazce umiestnené okolo aktuálneho"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Blízke reťazce"
+msgid "Concept Hierarchy Order"
+msgstr "Poradie Hierarchie Konceptov"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

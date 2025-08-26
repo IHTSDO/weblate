@@ -13402,8 +13402,8 @@ msgid "Messages placed around this one"
 msgstr "Teachtaireachtaí curtha timpeall ar an gceann seo"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Teaghráin in aice láimhe"
+msgid "Concept Hierarchy Order"
+msgstr "Ordú na hIarainn Coincheapa"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

@@ -13889,8 +13889,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source strings"
-msgid "Nearby strings"
-msgstr "Jatorrizko kateak"
+msgid "Concept Hierarchy Order"
+msgstr "Kontzeptu Hierarkia Ordena"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

@@ -13142,8 +13142,8 @@ msgid "Messages placed around this one"
 msgstr "Mesazhe të vendosur rreth këtij këtu"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Vargje atypari"
+msgid "Concept Hierarchy Order"
+msgstr "Renditja e Hierarkisë së Koncepteve"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

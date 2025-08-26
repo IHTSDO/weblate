@@ -12766,8 +12766,8 @@ msgid "Messages placed around this one"
 msgstr "הודעות סביב זאת"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "מחרוזות קרובות"
+msgid "Concept Hierarchy Order"
+msgstr "סדר היררכיית מושגים"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

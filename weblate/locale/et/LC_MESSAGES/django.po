@@ -13740,8 +13740,8 @@ msgid "Messages placed around this one"
 msgstr "Tekstid, mis asuvad selle teksti läheduses"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Kõrvuti lausendid"
+msgid "Concept Hierarchy Order"
+msgstr "Kontseptsiooni Hierarhia Järjekord"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

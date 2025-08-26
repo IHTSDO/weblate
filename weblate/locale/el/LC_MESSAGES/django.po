@@ -13435,8 +13435,8 @@ msgid "Messages placed around this one"
 msgstr "Τα μηνύματα γύρω από αυτό"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Κοντινά κείμενα"
+msgid "Concept Hierarchy Order"
+msgstr "Σειρά Ιεραρχίας Εννοιών"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

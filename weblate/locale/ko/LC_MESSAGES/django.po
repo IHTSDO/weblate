@@ -13063,8 +13063,8 @@ msgid "Messages placed around this one"
 msgstr "이 주위에 배치된 메시지"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "주변 문자열"
+msgid "Concept Hierarchy Order"
+msgstr "개념 계층 순서"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"
