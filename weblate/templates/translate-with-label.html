@@ -1,0 +1,41 @@
+{% extends "translate.html" %}
+
+{% load i18n %}
+{% load translations %}
+{% load static %}
+{% load compress %}
+
+{% block breadcrumbs %}
+  {% path_object_breadcrumbs path_object %}
+  <li>
+    <a href="{{ object.get_translate_url }}">{% translate "Translate" %}</a>
+  </li>
+  {% if url_label %}
+    <li>
+      <span class="label label-info">
+        {% if label_description %}
+          {% translate label_description %}
+        {% else %}
+          {% translate label_name %}
+        {% endif %}
+      </span>
+    </li>
+  {% endif %}
+  <a class="pull-right flip" href="{{ object.get_widgets_url }}">
+    <img src="{% url 'widget-image' path=object.get_url_path widget='svg' color='badge' extension='svg' %}?native=1" />
+  </a>
+{% endblock breadcrumbs %}
+
+<!-- {% block extra_script %}
+  {{ block.super }}
+  {% compress js %}
+    <script defer data-cfasync="false" src="{% static 'js/label-filter.js' %}{{ cache_param }}"></script>
+  {% endcompress %}
+{% endblock %} -->
+
+{% block content %}
+  {% if hide_label_filter %}
+    <div id="label-filter-flag" data-hide-label-filter="true" style="display: none;"></div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
