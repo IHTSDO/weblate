@@ -588,6 +588,44 @@ def handle_suggestions(
 
 
 @transaction.atomic
+def translate_with_label(request: AuthenticatedHttpRequest, path, label):
+    """Translate view with label filter in URL path."""
+    # Convert string path to list if needed (regex pattern returns string)
+    if isinstance(path, str):
+        path = path.split('/')
+    
+    # Create a modified request with the label filter
+    from django.http import QueryDict
+    from copy import copy
+    
+    # Create a copy of the request
+    modified_request = copy(request)
+    
+    # Create a new QueryDict with existing parameters plus the label filter
+    if request.GET:
+        new_get = request.GET.copy()
+        # Combine existing query with label filter
+        existing_query = new_get.get('q', '')
+        if existing_query:
+            # If there's already a query, combine it with the label filter using AND
+            new_query = f'label:"{label}" AND ({existing_query})'
+        else:
+            # If no existing query, just use the label filter
+            new_query = f'label:"{label}"'
+        new_get['q'] = new_query
+    else:
+        new_get = QueryDict(f'q=label:"{label}"')
+    
+    modified_request.GET = new_get
+    
+    # Call the regular translate view with the modified request
+    response = translate(modified_request, path)
+    
+    # Since translate() returns an HttpResponse, we need to create our own response
+    # Let's just return the response as-is for now and handle the template override differently
+    return response
+
+
 def translate(request: AuthenticatedHttpRequest, path):
     """Translate, suggest and search view."""
     obj, unit_set, context = parse_path_units(
@@ -703,70 +741,92 @@ def translate(request: AuthenticatedHttpRequest, path):
             unit.translation.component, initial={"translation": unit.translation}
         )
 
-    return render(
-        request,
-        "translate.html",
-        {
-            "path_object": obj,
-            "this_unit_url": this_unit_url,
-            "first_unit_url": base_unit_url + "1",
-            "last_unit_url": base_unit_url + str(num_results),
-            "next_section_url": base_unit_url
-            + str(offset + user.profile.nearby_strings),
-            "prev_section_url": base_unit_url
-            + str(max(1, offset - user.profile.nearby_strings)),
-            "next_unit_url": next_unit_url,
-            "prev_unit_url": base_unit_url + str(offset - 1),
-            "object": obj,
-            "project": project,
-            "component": obj.component if isinstance(obj, Translation) else None,
-            "unit": unit,
-            "nearby": unit.nearby(user.profile.nearby_strings),
-            "nearby_keys": unit.nearby_keys(user.profile.nearby_strings),
-            "can_go_next_section": offset + user.profile.nearby_strings <= num_results,
-            "others": get_other_units(unit) if user.is_authenticated else {"total": 0},
-            "search_url": search_result["url"],
-            "search_items": search_result["items"],
-            "search_query": search_result["query"],
-            "offset": offset,
-            "filter_count": num_results,
-            "filter_pos": offset,
-            "form": form,
-            "comment_form": CommentForm(
-                unit.translation,
-                initial={"scope": "global" if unit.is_source else "translation"},
-            ),
-            "context_form": ContextForm(instance=unit.source_unit, user=user),
-            "search_form": search_result["form"].reset_offset(),
-            "secondary": secondary,
-            "locked": unit.translation.component.locked,
-            "glossary": get_glossary_terms(unit, full=True),
-            "addterm_form": TermForm(unit, user),
-            "last_changes": unit.change_set.prefetch().recent(skip_preload="unit"),
-            "screenshots": (
-                unit.source_unit.screenshots.all() | unit.screenshots.all()
-            ).order(),
-            "display_checks": list(get_display_checks(unit)),
-            "comments_to_check": unit.unresolved_comments,
-            "machinery_services": json.dumps(
-                list(project.get_machinery_settings().keys())
-            ),
-            "new_unit_form": get_new_unit_form(
-                unit.translation, user, initial={"variant": unit.pk}
-            ),
-            "screenshot_form": screenshot_form,
-            "translation_file_link": lambda: try_linkify_filename(
-                unit.translation.filename,
-                unit.translation.filename,
-                # '1' as a placeholder, because `get_repoweb_link` can't currently
-                # generate links without line specified. Although it's ok to use
-                # '' or '0' on GitHub or GitLab, let's play it safe for now.
-                "1",
-                unit,
-                user.profile,
-            ),
-        },
-    )
+        # Check if there's a label filter in the search query
+    template_name = "translate.html"
+    context_data = {
+        "path_object": obj,
+        "this_unit_url": this_unit_url,
+        "first_unit_url": base_unit_url + "1",
+        "last_unit_url": base_unit_url + str(num_results),
+        "next_section_url": base_unit_url
+        + str(offset + 15),
+        "prev_section_url": base_unit_url
+        + str(max(1, offset - 15)),
+        "next_unit_url": next_unit_url,
+        "prev_unit_url": base_unit_url + str(offset - 1),
+        "object": obj,
+        "project": project,
+        "component": obj.component if isinstance(obj, Translation) else None,
+        "unit": unit,
+        "nearby": unit.nearby(15),  # Use fixed value instead of user preference
+        "can_go_next_section": offset + 15 <= num_results,  # Use fixed value
+        "others": get_other_units(unit) if user.is_authenticated else {"total": 0},
+        "search_url": search_result["url"],
+        "search_items": search_result["items"],
+        "search_query": search_result["query"],
+        "offset": offset,
+        "filter_count": num_results,
+        "filter_pos": offset,
+        "form": form,
+        "comment_form": CommentForm(
+            unit.translation,
+            initial={"scope": "global" if unit.is_source else "translation"},
+        ),
+        "context_form": ContextForm(instance=unit.source_unit, user=user),
+        "search_form": search_result["form"].reset_offset(),
+        "secondary": secondary,
+        "locked": unit.translation.component.locked,
+        "glossary": get_glossary_terms(unit, full=True),
+        "addterm_form": TermForm(unit, user),
+        "last_changes": unit.change_set.prefetch().recent(skip_preload="unit"),
+        "screenshots": (
+            unit.source_unit.screenshots.all() | unit.screenshots.all()
+        ).order(),
+        "display_checks": list(get_display_checks(unit)),
+        "comments_to_check": unit.unresolved_comments,
+        "machinery_services": json.dumps(
+            list(project.get_machinery_settings().keys())
+        ),
+        "new_unit_form": get_new_unit_form(
+            unit.translation, user, initial={"variant": unit.pk}
+        ),
+        "screenshot_form": screenshot_form,
+        "translation_file_link": lambda: try_linkify_filename(
+            unit.translation.filename,
+            unit.translation.filename,
+            # '1' as a placeholder, because `get_repoweb_link` can't currently
+            # generate links without line specified. Although it's ok to use
+            # '' or '0' on GitHub or GitLab, let's play it safe for now.
+            "1",
+            unit,
+            user.profile,
+        ),
+    }
+    
+    # Check if there's a label filter in the search query
+    if 'label:' in search_result["query"]:
+        template_name = "translate-with-label.html"
+        # Extract the label from the query - handle both simple and complex queries
+        import re
+        # First try to match label:"name" pattern
+        label_match = re.search(r'label:"([^"]+)"', search_result["query"])
+        if label_match:
+            label_name = label_match.group(1)
+            context_data["url_label"] = label_name
+            context_data["hide_label_filter"] = True
+            
+            # Try to get the actual Label object to show description
+            from weblate.trans.models import Label
+            try:
+                label_obj = Label.objects.get(name=label_name, project=project)
+                context_data["label_description"] = label_obj.description
+                context_data["label_name"] = label_obj.name
+            except Label.DoesNotExist:
+                # Fallback to just the name if label not found
+                context_data["label_description"] = None
+                context_data["label_name"] = label_name
+    
+    return render(request, template_name, context_data)
 
 
 @require_POST

@@ -118,6 +118,11 @@ real_patterns = [
         weblate.trans.views.edit.browse,
         name="browse",
     ),
+    re_path(
+        r"^translate/(?P<path>[^/]+/[^/]+/[^/]+)/(?P<label>[^/]+)/$",
+        weblate.trans.views.edit.translate_with_label,
+        name="translate-with-label",
+    ),
     path(
         "translate/<object_path:path>/",
         weblate.trans.views.edit.translate,
