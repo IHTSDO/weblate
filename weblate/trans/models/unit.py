@@ -1653,26 +1653,8 @@ class Unit(models.Model, LoggerMixin):
             return result.fill_in_source_translation()
 
     def nearby_keys(self, count: int) -> Iterable[Unit]:
-        # Do not show nearby keys on bilingual
-        if not self.translation.component.has_template():
-            return []
-        with sentry_sdk.start_span(op="unit.nearby_keys", name=f"{self.pk}"):
-            key = self.translation.keys_cache_key
-            key_list = cache.get(key)
-            unit_set = self.translation.unit_set
-            if key_list is None or self.pk not in key_list:
-                key_list = list(
-                    unit_set.order_by("context").values_list("id", flat=True)
-                )
-                cache.set(key, key_list)
-            offset = key_list.index(self.pk)
-            nearby = key_list[max(offset - count, 0) : offset + count]
-            return (
-                unit_set.filter(id__in=nearby)
-                .prefetch_full()
-                .order_by("context")
-                .fill_in_source_translation()
-            )
+        # Disabled: return empty list to hide the "Similar keys" tab
+        return []
 
     def variants(self) -> Iterable[Unit]:
         if not self.variant:
