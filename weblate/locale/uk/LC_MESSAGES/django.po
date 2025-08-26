@@ -13206,8 +13206,8 @@ msgid "Messages placed around this one"
 msgstr "Повідомлення, розміщені навколо цього"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Сусідні рядки"
+msgid "Concept Hierarchy Order"
+msgstr "Порядок ієрархії концепцій"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

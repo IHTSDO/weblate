@@ -12286,8 +12286,8 @@ msgid "Messages placed around this one"
 msgstr ""
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr ""
+msgid "Concept Hierarchy Order"
+msgstr "Concept Hierarchy Order"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

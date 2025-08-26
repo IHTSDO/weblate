@@ -13041,8 +13041,8 @@ msgid "Messages placed around this one"
 msgstr "Pesan ditempatkan di sekitar yang satu ini"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "String terdekat"
+msgid "Concept Hierarchy Order"
+msgstr "Urutan Hierarki Konsep"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

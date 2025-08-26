@@ -14289,8 +14289,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source change"
-msgid "Nearby strings"
-msgstr "Boarnewiziging"
+msgid "Concept Hierarchy Order"
+msgstr "Concept Hierarchy Order"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

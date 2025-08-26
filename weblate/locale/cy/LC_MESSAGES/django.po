@@ -13746,8 +13746,8 @@ msgid "Messages placed around this one"
 msgstr "Negeseuon wedi'u gosod o amgylch hwn"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Llinynnau gerllaw"
+msgid "Concept Hierarchy Order"
+msgstr "Trefn Hierarchaeth Cysyniadau"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

@@ -14964,8 +14964,8 @@ msgstr "Bu mesajın yaxınında olan mesajlar"
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source string:"
-msgid "Nearby strings"
-msgstr "Qaynaq sətir:"
+msgid "Concept Hierarchy Order"
+msgstr "Konsepsiya İyerarxiya Sırası"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

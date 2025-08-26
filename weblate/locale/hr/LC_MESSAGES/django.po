@@ -13116,8 +13116,8 @@ msgid "Messages placed around this one"
 msgstr "Poruke smještene okolo ove"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Obližnji izrazi"
+msgid "Concept Hierarchy Order"
+msgstr "Red hijerarhije koncepata"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

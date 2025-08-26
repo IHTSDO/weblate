@@ -12980,8 +12980,8 @@ msgid "Messages placed around this one"
 msgstr "Textastrengir í kringum þennan streng"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Nálægir strengir"
+msgid "Concept Hierarchy Order"
+msgstr "Hugtak Röðun Röðun"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

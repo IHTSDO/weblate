@@ -14798,8 +14798,8 @@ msgstr "Kemennadoù tro-war-dro homañ"
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source strings review"
-msgid "Nearby strings"
-msgstr "Selladenn ouzh mammennoù an neudennadoù"
+msgid "Concept Hierarchy Order"
+msgstr "Urzh ar Renkadur Kevredad"
 
 #: weblate/templates/translate.html:279
 #, fuzzy

@@ -13033,8 +13033,8 @@ msgid "Messages placed around this one"
 msgstr "Bu iletinin yakınındaki iletiler"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "Yakındaki dizgeler"
+msgid "Concept Hierarchy Order"
+msgstr "Kavram Hiyerarşi Sırası"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

@@ -12640,8 +12640,8 @@ msgid "Messages placed around this one"
 msgstr "圍繞此訊息的前後訊息"
 
 #: weblate/templates/translate.html:272
-msgid "Nearby strings"
-msgstr "相鄰字串"
+msgid "Concept Hierarchy Order"
+msgstr "概念階層順序"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"

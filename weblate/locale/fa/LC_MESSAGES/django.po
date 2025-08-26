@@ -13706,8 +13706,8 @@ msgstr ""
 #: weblate/templates/translate.html:272
 #, fuzzy
 #| msgid "Source strings"
-msgid "Nearby strings"
-msgstr "رشته های منبع"
+msgid "Concept Hierarchy Order"
+msgstr "ترتیب سلسله مراتب مفاهیم"
 
 #: weblate/templates/translate.html:279
 msgid "Strings with similar keys"
