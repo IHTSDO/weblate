@@ -11,7 +11,14 @@
     margin-right: 0;
     display: NONE;
 }
-
+.navbar-brand>img {
+    display: inline-block;
+    width: 1.5em;
+    max-height: 40px;
+    margin-top: -9px;
+    margin-left: -12px;
+    margin-right: 14px;
+}
 .help-block label {
     display: none;
 }
