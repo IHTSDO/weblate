@@ -177,7 +177,7 @@ keywords = [
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
-name = "snowlate"
+name = "weblate"
 requires-python = ">=3.11"
 version = "5.12.2"
 
