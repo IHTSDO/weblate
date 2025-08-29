@@ -128,7 +128,7 @@ def validate_bitmap(value) -> None:
 
     # Check dimensions
     width, height = image.size
-    if width > 2000 or height > 2000:
+    if width > 2000 or height > 6000:
         image.close()
         raise ValidationError(
             gettext("The image is too big, please crop or scale it down.")
