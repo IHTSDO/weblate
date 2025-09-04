@@ -25,20 +25,22 @@
 
   <ul class="nav nav-pills">
     <li class="active">
-      <a href="#languages" data-toggle="tab">{% translate "Languages" %}</a>
-    </li>
-    <li>
-      <a href="#components" data-toggle="tab">{% translate "Components" %}</a>
-    </li>
-    <li>
       <a href="#information" data-toggle="tab">{% translate "Overview" %}</a>
     </li>
+    {% if user.is_superuser %}
     <li>
-      <a href="#search" data-toggle="tab">{% translate "Search" %}</a>
+      <a href="#languages" data-toggle="tab">{% translate "Languages" %}*</a>
     </li>
+    <li>
+      <a href="#components" data-toggle="tab">{% translate "Components" %}*</a>
+    </li>
+    <li>
+      <a href="#search" data-toggle="tab">{% translate "Search" %}*</a>
+    </li>
+    {% endif %}
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Insights" %} <span class="caret"></span>
+        {% translate "Insights" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         <li>
@@ -64,7 +66,7 @@
     </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Files" %} <span class="caret"></span>
+        {% translate "Files" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         <li>
@@ -87,7 +89,7 @@
     </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Tools" %} <span class="caret"></span>
+        {% translate "Tools" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         {% if replace_form %}
@@ -111,7 +113,7 @@
     {% if user_can_manage_acl or user_can_edit_project or user_can_see_repository_status or user.is_authenticated %}
       <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-          {% translate "Manage" %} <span class="caret"></span>
+          {% translate "Manage" %}* <span class="caret"></span>
         </a>
         <ul class="dropdown-menu">
           {% if user_can_see_repository_status %}
@@ -198,7 +200,6 @@
         </ul>
       </li>
     {% endif %}
-    {% include "snippets/share-menu.html" with object=object %}
   </ul>
 
   <div class="tab-content">
@@ -210,11 +211,11 @@
 
     </div>
 
-    <div class="tab-pane" id="information">
+    <div class="tab-pane active" id="information">
       {% show_info project=object stats=object.stats metrics=object|metrics show_source=True %}
     </div>
 
-    <div class="tab-pane active" id="languages">
+    <div class="tab-pane" id="languages">
 
       {% include "snippets/list-objects.html" with objects=language_stats name_source="language" label=_("Language") project=object global_base=object.stats %}
 

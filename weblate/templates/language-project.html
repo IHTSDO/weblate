@@ -20,28 +20,7 @@
       <a href="#translation" data-toggle="tab">{% translate "Translation" %}</a>
     </li>
     <li>
-      <a href="#components" data-toggle="tab">{% translate "Components" %}</a>
-    </li>
-    <li>
-      <a href="#information" data-toggle="tab">{% translate "Overview" %}</a>
-    </li>
-    <li>
       <a href="#search" data-toggle="tab">{% translate "Search" %}</a>
-    </li>
-    <li class="dropdown">
-      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Insights" %} <span class="caret"></span>
-      </a>
-      <ul class="dropdown-menu">
-        <li>
-          <a href="#history" data-toggle="tab">{% translate "History" %}</a>
-        </li>
-        {% if last_announcements %}
-          <li>
-            <a href="#announcement-history" data-toggle="tab">{% translate "Announcements" %}</a>
-          </li>
-        {% endif %}
-      </ul>
     </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -66,42 +45,12 @@
         </li>
       </ul>
     </li>
-    <li class="dropdown">
-      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Tools" %} <span class="caret"></span>
-      </a>
-      <ul class="dropdown-menu">
-        {% if replace_form %}
-          <li>
-            <a href="#replace" data-toggle="tab">{% translate "Search and replace" %}</a>
-          </li>
-        {% endif %}
-        {% if bulk_state_form %}
-          <li>
-            <a href="#bulk-edit" data-toggle="tab">{% translate "Bulk edit" %}</a>
-          </li>
-        {% endif %}
-        <li>
-          <a href="{% url 'checks' path=object.get_url_path %}">{% translate "Failing checks" %}</a>
-        </li>
-      </ul>
-    </li>
-    {% if user_can_edit_project or announcement_form or delete_form %}
+    {% if user.is_superuser %}
       <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
           {% translate "Manage" %} <span class="caret"></span>
         </a>
         <ul class="dropdown-menu">
-          {% if user_can_edit_project %}
-            <li>
-              <a href="{% url 'settings' path=object.get_url_path %}">{% translate "Settings" %}</a>
-            </li>
-          {% endif %}
-          {% if announcement_form %}
-            <li>
-              <a href="#announcement" data-toggle="tab">{% translate "Post announcement" %}</a>
-            </li>
-          {% endif %}
           {% if delete_form %}
             <li role="separator" class="divider"></li>
             <li>
@@ -111,13 +60,12 @@
         </ul>
       </li>
     {% endif %}
-    {% include "snippets/share-menu.html" with object=object %}
-    {% include "snippets/watch-dropdown.html" %}
   </ul>
 
   <div class="tab-content">
 
     <div class="tab-pane active" id="translation">{% include "snippets/translation.html" %}</div>
+{% if false %}
     <div class="tab-pane" id="components">
       {% include "snippets/list-objects.html" with objects=translation_objects list_categories=categories name_source="component_name" label=_("Component") %}
 
@@ -127,6 +75,7 @@
     <div class="tab-pane" id="information">
       {% show_info project=project language=language stats=language_stats metrics=object|metrics show_full_language=False %}
     </div>
+{% endif %}
 
     <div class="tab-pane" id="history">
       {% include "last-changes-content.html" %}
