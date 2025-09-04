@@ -12,6 +12,7 @@
 
 {% block nav_pills %}
   <ul class="nav nav-pills">
+  {% if false %}
     <li class="nav-item">
       <a class="nav-link active"
          data-bs-toggle="tab"
@@ -27,21 +28,26 @@
     <li class="nav-item">
       <a class="nav-link" data-bs-toggle="tab" data-bs-target="#account" href="#">{% translate "Account" %}</a>
     </li>
+  {% endif %}
     <li class="nav-item">
-      <a class="nav-link" data-bs-toggle="tab" data-bs-target="#profile" href="#">{% translate "Profile" %}</a>
+      <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile" href="#">{% translate "Profile" %}</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" data-bs-toggle="tab" data-bs-target="#teams" href="#">{% translate "Teams" %}</a>
     </li>
+  {% if false %}
     <li class="nav-item">
       <a class="nav-link" data-bs-toggle="tab" data-bs-target="#licenses" href="#">{% translate "Licenses" %}</a>
     </li>
+  {% endif %}
     <li class="nav-item">
       <a class="nav-link" data-bs-toggle="tab" data-bs-target="#audit" href="#">{% translate "Audit log" %}</a>
     </li>
+  {% if false %}
     <li class="nav-item">
       <a class="nav-link" data-bs-toggle="tab" data-bs-target="#api" href="#">{% translate "API access" %}</a>
     </li>
+  {% endif %}
   </ul>
 {% endblock nav_pills %}
 
@@ -63,6 +69,7 @@
     <input type="hidden" id="form-activetab" name="activetab" value="" />
 
     <div class="tab-content">
+      {% if false %}
 
       <div class="tab-pane show active" id="languages">
         <div class="card">
@@ -393,8 +400,10 @@
         </div>
 
       </div>
+      {% endif %}
 
       <div class="tab-pane" id="profile">
+        {% if false %}
         <div class="card">
           <div class="card-header">
             <h4 class="card-title">
@@ -411,6 +420,7 @@
             <input type="submit" value="{% translate "Save" %}" class="btn btn-primary" />
           </div>
         </div>
+        {% endif %}
         {% if enable_avatars %}
           <div class="card">
             <div class="card-header">
@@ -481,6 +491,7 @@
       </div>
 
       <div class="tab-pane" id="audit">
+{% if false %}
         <div class="card">
           <div class="card-header">
             <h4 class="card-title">{% translate "Description" %}</h4>
@@ -491,7 +502,7 @@
             </p>
           </div>
         </div>
-
+{% endif %}
         <div class="card">
           <div class="card-header">
             <h4 class="card-title">{% translate "Audit log" %}</h4>
@@ -520,13 +531,16 @@
               {% endfor %}
             </tbody>
           </table>
+{% if false %}
           <div class="card-footer">
             <a href="{% url 'contact' %}?t=account" class="btn btn-warning">{% translate "Report suspicious activity" %}</a>
           </div>
+{% endif %}
         </div>
 
       </div>
 
+{% if false %}
       <div class="tab-pane" id="api">
         <div class="card">
           <div class="card-header">
@@ -667,6 +681,7 @@ wlc \
         </div>
 
       </div>
+{% endif %}
     </div>
 
 
