@@ -319,6 +319,18 @@ class PluralTextarea(forms.Textarea):
         unit = value
         translation = unit.translation
         lang_label = lang = translation.language
+        # Clean up language label by removing "language reference set" or "language refset" (case insensitive)
+        if hasattr(lang_label, 'name'):
+            lang_name = lang_label.name
+            # Remove "language reference set" or "language refset" (case insensitive)
+            import re
+            lang_name = re.sub(r'\b(?:language\s+)?(?:reference\s+)?set\b', '', lang_name, flags=re.IGNORECASE)
+            # Clean up extra whitespace
+            lang_name = re.sub(r'\s+', ' ', lang_name).strip()
+            # Create a new language object with cleaned name
+            from copy import copy
+            lang_label = copy(lang_label)
+            lang_label.name = lang_name
         if self.is_source_plural:
             plurals = translation.get_source_plurals()
             values = plurals
@@ -366,7 +378,9 @@ class PluralTextarea(forms.Textarea):
             if show_plural_labels:
                 label = format_html("{}, {}", label, plural.get_plural_label(idx))
             elif translation.component.is_multivalue and idx > 0:
-                label = format_html("{}, {}", label, gettext("Alternative translation"))
+                label = format_html("{}, {}", label.name, gettext("Synonym"))
+            else:
+                label = format_html("{}, {}", label.name, gettext("Preferred Term"))
             ret.append(
                 render_to_string(
                     "snippets/editor.html",
