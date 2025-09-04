@@ -64,6 +64,7 @@
       {% translate "Strings status" %}
     </h4>
   </div>
+  <h3>Stats without labels</h3>
   <table class="table table-autowidth table-listing">
     <thead>
       <tr>
@@ -75,6 +76,8 @@
       </tr>
     </thead>
     {% for query, name, count, color, words, characters in object.list_translation_checks %}
+      <!-- DEBUG: query="{{ query }}" name="{{ name }}" slice="{{ query|slice:":5" }}" length="{{ query|length }}" -->
+      {% if query != "NOT has:label" and not query|slice:":5" == "label" %}
       <tr data-href="{{ translate_url }}?q={{ query }}" class="clickable-row">
         <th class="number split-cell wrap-cell">
           <span>{{ count|intcomma }}</span>
@@ -105,6 +108,7 @@
           <a class="btn-inline" href="{{ zen_url }}?q={{ query }}">{% translate "Zen" %}</a>
         </td>
       </tr>
+      {% endif %}
     {% endfor %}
   </table>
 </div>

@@ -10,20 +10,22 @@
 
   <ul class="nav nav-pills">
     <li class="active">
-      <a href="#languages" data-toggle="tab">{% translate "Languages" %}</a>
-    </li>
-    <li>
-      <a href="#components" data-toggle="tab">{% translate "Components" %}</a>
-    </li>
-    <li>
       <a href="#information" data-toggle="tab">{% translate "Overview" %}</a>
     </li>
+    {% if user.is_superuser %}
     <li>
-      <a href="#search" data-toggle="tab">{% translate "Search" %}</a>
+      <a href="#languages" data-toggle="tab">{% translate "Languages" %}*</a>
     </li>
+    <li>
+      <a href="#components" data-toggle="tab">{% translate "Components" %}*</a>
+    </li>
+    <li>
+      <a href="#search" data-toggle="tab">{% translate "Search" %}*</a>
+    </li>
+    {% endif %}
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Insights" %} <span class="caret"></span>
+        {% translate "Insights" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         <li>
@@ -55,7 +57,7 @@
     </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Files" %} <span class="caret"></span>
+        {% translate "Files" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         <li>
@@ -78,7 +80,7 @@
     </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-        {% translate "Operations" %} <span class="caret"></span>
+        {% translate "Operations" %}* <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         {% if replace_form %}
@@ -180,8 +182,7 @@
         {% endif %}
       </ul>
     </li>
-    {% include "snippets/share-menu.html" with object=object %}
-    {% include "snippets/watch-dropdown.html" with project=object %}
+  {% endif %}
   </ul>
 {% endblock nav_pills %}
 
@@ -213,11 +214,11 @@
 
     </div>
 
-    <div class="tab-pane" id="information">
+    <div class="tab-pane active" id="information">
       {% show_info project=object stats=object.stats metrics=object|metrics show_source=True %}
     </div>
 
-    <div class="tab-pane active" id="languages">
+    <div class="tab-pane" id="languages">
 
       {% include "snippets/list-objects.html" with objects=language_stats name_source="language" label=_("Language") project=object global_base=object.stats add_link="translation" %}
 

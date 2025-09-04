@@ -10,14 +10,9 @@
       <a href="#translation" data-toggle="tab">{% translate "Translation" %}</a>
     </li>
     <li>
-      <a href="#components" data-toggle="tab">{% translate "Components" %}</a>
-    </li>
-    <li>
-      <a href="#information" data-toggle="tab">{% translate "Overview" %}</a>
-    </li>
-    <li>
       <a href="#search" data-toggle="tab">{% translate "Search" %}</a>
     </li>
+  {% if False %}
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
         {% translate "Insights" %} <span class="caret"></span>
@@ -36,6 +31,7 @@
         {% endif %}
       </ul>
     </li>
+  {% endif %}
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
         {% translate "Files" %} <span class="caret"></span>
@@ -59,6 +55,8 @@
         </li>
       </ul>
     </li>
+{% if user.is_superuser %}
+
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
         {% translate "Operations" %} <span class="caret"></span>
@@ -93,8 +91,11 @@
         {% endif %}
       </ul>
     </li>
+{% endif %}
+
     {% include "snippets/share-menu.html" with object=object %}
     {% include "snippets/watch-dropdown.html" %}
+
   </ul>
 {% endblock nav_pills %}
 
@@ -114,6 +115,7 @@
   <div class="tab-content">
 
     <div class="tab-pane active" id="translation">{% include "snippets/translation.html" %}</div>
+{% if false %}
     <div class="tab-pane" id="components">
       {% include "snippets/list-objects.html" with objects=translation_objects list_categories=categories name_source="component_name" label=_("Component") %}
 
@@ -123,6 +125,7 @@
     <div class="tab-pane" id="information">
       {% show_info project=project language=language stats=language_stats metrics=object|metrics show_full_language=False %}
     </div>
+{% endif %}
 
     <div class="tab-pane" id="history">
       {% format_last_changes_content last_changes=last_changes user=user %}
