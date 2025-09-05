@@ -177,7 +177,9 @@
                            href="#"
                            class="btn btn-link btn-xs bug-comment">{% icon "bug.svg" %}</a>
                       {% endif %}
-                      {% include "snippets/note-badge.html" with unit=unit %}
+                      {% if false %}
+                        {% include "snippets/note-badge.html" with unit=unit %}
+                      {% endif %}
                       <div class="clearfix"></div>
                     </div>
                     {% format_unit_source unit search_match=search_query glossary=glossary show_copy=True %}

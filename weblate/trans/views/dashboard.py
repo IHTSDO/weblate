@@ -141,12 +141,31 @@ def get_translation_sets(user: User):
                         language_labels.append(label)
         
         if language_labels:
-            # Add URL path to each label
+            # Add URL path and statistics to each label
             for label in language_labels:
                 # Create the path as a list: [project_slug, '-', language_code]
                 label.translate_url_path = [label.project.slug, '-', language.code]
                 # Store label name separately for the new URL pattern
                 label.label_name = label.name
+                
+                # Get translation statistics for this label
+                from weblate.trans.models import Unit
+                from weblate.utils.state import STATE_TRANSLATED
+                
+                # Get all units with this label
+                label_units = Unit.objects.filter(
+                    labels=label,
+                    translation__language=language
+                )
+                
+                # Count total and translated units
+                total_units = label_units.count()
+                translated_units = label_units.filter(state__gte=STATE_TRANSLATED).count()
+                
+                # Add statistics to label object
+                label.total_units = total_units
+                label.translated_units = translated_units
+                label.translated_percent = (translated_units / total_units * 100) if total_units > 0 else 0
             
             translation_sets.append({
                 'language': language,
