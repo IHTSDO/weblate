@@ -11,14 +11,29 @@
     margin-right: 0;
     display: NONE;
 }
+.navbar-brand {
+    height: 60px;
+    padding: 8px 15px;
+}
+.navbar-inverse .navbar-brand:hover, -brand > a:hover {
+    color: var(--header-text-color)!important;;
+}
 .navbar-brand>img {
     display: inline-block;
-    width: 1.5em;
-    max-height: 40px;
-    margin-top: -9px;
-    margin-left: -12px;
+    width: 50px;
+    height: 50px;
+    max-height: 50px;
+    margin-top: -4px;
+    margin-left: 0px;
     margin-right: 14px;
 }
+#wl-navbar-main {
+    padding-top: 5px;
+}
+.navbar-inverse .navbar-nav > li > a {
+    color: var(--focus-color)!important;;
+}
+
 .help-block label {
     display: none;
 }
