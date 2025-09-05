@@ -133,6 +133,7 @@
 
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="wl-navbar-main">
+            {% if false %}
             <form class="navbar-form navbar-left">
               <div class="form-group">
                 <input type="text"
@@ -141,6 +142,7 @@
                        placeholder="{% translate "Search" %}">
               </div>
             </form>
+            {% endif %}
             <ul class="nav navbar-nav">
               <li>
                 <a href="{% url 'home' %}">{% translate "Dashboard" %}</a>
