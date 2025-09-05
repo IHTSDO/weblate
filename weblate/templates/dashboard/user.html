@@ -36,16 +36,22 @@
               <table class="sort table progress-table autocolspan table-listing">
                 <thead class="sticky-header">
                   <tr>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell">
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 30%; text-align: left;">
                       {% translate "Translation Sets" %}
                     </th>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 15%; text-align: left;">
-                      {% translate "Strings" %}
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 10%; text-align: left;">
+                      {% translate "All Strings" %}
                     </th>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 25%; text-align: left;">
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 10%; text-align: left;">
+                      {% translate "Translated" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 10%; text-align: left;">
+                      {% translate "Untranslated" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 30%; text-align: left;">
                       {% translate "Progress" %}
                     </th>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 40%; text-align: left;">
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 10%; text-align: left;">
                       {% translate "Percent" %}
                     </th>
                   </tr>
@@ -66,7 +72,17 @@
                       </td>
                       <td class="number" style="text-align: left;">
                         <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}">
-                          {{ label.string_count }}
+                          {{ label.string_count|intcomma }}
+                        </a>
+                      </td>
+                      <td class="number" style="text-align: left;">
+                        <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}?q=state:>=translated">
+                          {{ label.translated_units|intcomma }}
+                        </a>
+                      </td>
+                      <td class="number" style="text-align: left;">
+                        <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}?q=state:<translated">
+                          {{ label.untranslated_units|intcomma }}
                         </a>
                       </td>
                       <td style="text-align: left;">
