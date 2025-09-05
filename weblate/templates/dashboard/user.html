@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load compress crispy_forms_tags i18n icons permissions static translations %}
+{% load compress crispy_forms_tags humanize i18n icons permissions static translations %}
 
 {% block content %}
 
@@ -39,8 +39,14 @@
                     <th title="{% translate "Sort this column" %}" class="sort-cell">
                       {% translate "Translation Sets" %}
                     </th>
-                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 50%; text-align: left;">
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 15%; text-align: left;">
                       {% translate "Strings" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 25%; text-align: left;">
+                      {% translate "Progress" %}
+                    </th>
+                    <th title="{% translate "Sort this column" %}" class="sort-cell" style="width: 40%; text-align: left;">
+                      {% translate "Percent" %}
                     </th>
                   </tr>
                 </thead>
@@ -58,10 +64,27 @@
                           </span>
                         </a>
                       </td>
-                      <td class="number" style="width: 50%; text-align: left;">
+                      <td class="number" style="text-align: left;">
                         <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}">
                           {{ label.string_count }}
                         </a>
+                      </td>
+                      <td style="text-align: left;">
+                        <div class="progress-cell hidden-xs">
+                          <div class="progress" title="{{ label.translated_units|intcomma }} / {{ label.total_units|intcomma }} {% translate 'translated' %}">
+                            <div class="progress-bar progress-bar-success"
+                                 role="progressbar"
+                                 aria-valuenow="{{ label.translated_percent|floatformat:1 }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"
+                                 style="width: {{ label.translated_percent|floatformat:1 }}%"
+                                 title="{{ label.translated_units|intcomma }} / {{ label.total_units|intcomma }} {% translate 'translated' %}"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="percent" style="text-align: left;" 
+                          title="{{ label.translated_units|intcomma }} / {{ label.total_units|intcomma }} {% translate 'translated' %}">
+                        {{ label.translated_percent|floatformat:1 }}%
                       </td>
                     </tr>
                   {% endfor %}
