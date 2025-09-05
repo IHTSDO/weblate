@@ -158,13 +158,15 @@ def get_translation_sets(user: User):
                     translation__language=language
                 )
                 
-                # Count total and translated units
+                # Count total, translated, and untranslated units
                 total_units = label_units.count()
                 translated_units = label_units.filter(state__gte=STATE_TRANSLATED).count()
+                untranslated_units = total_units - translated_units
                 
                 # Add statistics to label object
                 label.total_units = total_units
                 label.translated_units = translated_units
+                label.untranslated_units = untranslated_units
                 label.translated_percent = (translated_units / total_units * 100) if total_units > 0 else 0
             
             translation_sets.append({
