@@ -820,6 +820,7 @@ def translate(request: AuthenticatedHttpRequest, path):
                 label_obj = Label.objects.get(name=label_name, project=project)
                 context_data["label_description"] = label_obj.description
                 context_data["label_name"] = label_obj.name
+                context_data["title"] = label_obj.description
             except Label.DoesNotExist:
                 # Fallback to just the name if label not found
                 context_data["label_description"] = None
