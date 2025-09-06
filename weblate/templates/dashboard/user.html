@@ -72,7 +72,7 @@
                       </td>
                       <td class="number" style="text-align: left;">
                         <a href="{% url 'translate-with-label' path=label.translate_url_path|join:'/' label=label.label_name %}">
-                          {{ label.string_count|intcomma }}
+                          {{ label.total_units|intcomma }}
                         </a>
                       </td>
                       <td class="number" style="text-align: left;">
