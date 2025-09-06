@@ -1597,6 +1597,7 @@ a.format-item:hover {
 
 .label {
   padding: .2em .6em;
+  font-size: 90%;
 }
 
 h2 .label {
