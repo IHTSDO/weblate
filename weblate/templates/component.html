@@ -12,7 +12,9 @@
 
 {% block content %}
 
-{% if false %}
+{% if user.is_superuser %}
+  <h2><i>Only visible to Superusers</i></h2>
+
   {% announcements component=object %}
 
   {% include "snippets/component/state.html" %}
