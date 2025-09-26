@@ -917,6 +917,7 @@ class BaseExporter:
         url=None,
         translation=None,
         fieldnames=None,
+        fields=None,
     ) -> None:
         self.translation = translation
         if translation is not None:
