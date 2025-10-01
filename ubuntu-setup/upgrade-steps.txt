@@ -1,0 +1,57 @@
+# Weblate upgrade steps, for Ubuntu servers
+
+# Take secret key out of existing settings file
+grep SECRET_KEY /opt/weblate/weblate-env/lib/python3.12/site-packages/weblate/settings.py | cut -d'"' -f2 | sudo tee /opt/weblate/weblate-env/secret-key.txt
+
+# Enter virtual environment
+cd /opt/weblate/weblate-env/
+sudo su weblate
+. bin/activate
+
+# Upgrade Weblate python packages
+pip install --upgrade pip
+NEW_WEBLATE_VERSION="5.12.2"
+pip install weblate[postgres,amazon,google,openai]==${NEW_WEBLATE_VERSION}
+
+# Exit virtual environment
+exit
+
+
+# -Deploy Fork-
+# Check out https://github.com/IHTSDO/weblate using the correct branch
+mkdir git
+cd git
+git clone https://github.com/IHTSDO/weblate.git
+cd weblate
+sudo rsync -ac --exclude="tests" --exclude='locale' --exclude='__pycache__/' --no-times --no-perms --no-owner --no-group --itemize-changes weblate/ /opt/weblate/weblate-env/lib/python3.12/site-packages/weblate/
+cd ..
+sudo cp ubuntu-setup/files/django-custommiddleware.py /opt/weblate/weblate-env/lib/python3.12/site-packages/django/contrib/auth/custommiddleware.py
+sudo cp ubuntu-setup/files/django-middleware-csrf.py /opt/weblate/weblate-env/lib/python3.12/site-packages/django/middleware/csrf.py
+sudo chown -R weblate:weblate /opt/weblate
+
+
+# Restart gunicorn web server
+sudo systemctl restart gunicorn
+
+# Enter virtual environment
+cd /opt/weblate/weblate-env/
+sudo su weblate
+. bin/activate
+
+# Migrate database
+weblate migrate --noinput
+
+# Cache web static files
+weblate collectstatic --noinput --clear
+
+# Verify setup
+weblate check --deploy
+
+# Exit virtual environment
+exit
+
+# Restart gunicorn web server
+sudo systemctl start gunicorn
+
+# Restart celery workers
+sudo systemctl restart celery-weblate
