@@ -123,11 +123,11 @@ def weblate_context(request: AuthenticatedHttpRequest):
 
     # Load user translations if user is authenticated
     watched_projects = None
-    theme = "auto"
+    theme = "light"
     if hasattr(request, "user"):
         if request.user.is_authenticated:
             watched_projects = request.user.watched_projects
-        theme = request.user.profile.theme
+        theme = "light"
 
     if settings.OFFER_HOSTING:
         description = gettext(
