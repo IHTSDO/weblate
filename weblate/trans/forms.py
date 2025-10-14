@@ -338,11 +338,13 @@ class PluralTextarea(forms.Textarea):
             plurals = unit.get_source_plurals()
             values = unit.get_target_plurals()
         if "zen-mode" in self.attrs:
-            lang_label = format_html(
+            lang_label_html = format_html(
                 '<a class="language" href="{}" tabindex="-1">{}</a>',
                 unit.get_absolute_url(),
                 lang_label,
             )
+        else:
+            lang_label_html = lang_label
         plural = translation.plural
         placeables_set = set()
         for text in plurals:
@@ -374,13 +376,13 @@ class PluralTextarea(forms.Textarea):
             # Render textare
             textarea = super().render(fieldname, val, attrs, renderer, **kwargs)
             # Label for plural
-            label = lang_label
+            label = lang_label_html
             if show_plural_labels:
                 label = format_html("{}, {}", label, plural.get_plural_label(idx))
             elif translation.component.is_multivalue and idx > 0:
-                label = format_html("{}, {}", label.name, gettext("Synonym"))
+                label = format_html("{}, {}", lang_label.name, gettext("Synonym"))
             else:
-                label = format_html("{}, {}", label.name, gettext("Preferred Term"))
+                label = format_html("{}, {}", lang_label.name, gettext("Preferred Term"))
             ret.append(
                 render_to_string(
                     "snippets/editor.html",
