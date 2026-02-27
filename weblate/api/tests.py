@@ -5472,6 +5472,157 @@ class CategoryAPITest(APIBaseTest):
         # Clean up
         no_perm_user.delete()
 
+    def test_bulk_remove_label(self) -> None:
+        """Test bulk removing labels from units by context IDs."""
+        label = self.component.project.label_set.create(
+            name="remove-label", color="navy", description="Test label for bulk remove"
+        )
+
+        # Get units and assign distinct context values
+        units = list(
+            Unit.objects.filter(
+                translation__component=self.component,
+                translation__language_code="en",
+            )[:3]
+        )
+        context_ids = []
+        for i, unit in enumerate(units):
+            unit.context = f"remove-context-{i}"
+            unit.save()
+            context_ids.append(unit.context)
+
+        # Pre-add the label to all units via ORM
+        for unit in units:
+            unit.labels.add(label)
+
+        # Verify setup
+        for unit in units:
+            unit.refresh_from_db()
+            self.assertIn(label, unit.labels.all())
+
+        # Test successful bulk remove
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids,
+            },
+            code=200,
+            format="json",
+        )
+        self.assertEqual(response.data["status"], "success")
+
+        # Verify labels were removed
+        for unit in units:
+            unit.refresh_from_db()
+            self.assertNotIn(label, unit.labels.all())
+
+        # Test idempotency: removing already-absent label returns success
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids,
+            },
+            code=200,
+            format="json",
+        )
+        self.assertEqual(response.data["status"], "success")
+
+        # Test with non-existent project
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": "non-existent-project",
+                "label_id": label.id,
+                "context_ids": context_ids,
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(
+            any(e.get("attr") == "project_slug" for e in response.data.get("errors", []))
+        )
+
+        # Test with non-existent label
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": 99999,
+                "context_ids": context_ids,
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(
+            any(e.get("attr") == "label_id" for e in response.data.get("errors", []))
+        )
+
+        # Test with invalid context_ids (not a list)
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": "not-a-list",
+            },
+            code=400,
+            format="json",
+        )
+        self.assertTrue(
+            any(e.get("attr") == "context_ids" for e in response.data.get("errors", []))
+        )
+
+        # Test with missing required fields
+        response = self.do_request(
+            "api:unit-bulk-remove-label",
+            method="post",
+            superuser=True,
+            request={"project_slug": self.component.project.slug},
+            code=400,
+            format="json",
+        )
+        error_attrs = [e.get("attr") for e in response.data.get("errors", [])]
+        self.assertIn("error", error_attrs)
+
+        # Test permission denied for user without unit.edit permission
+        from weblate.auth.models import User
+
+        no_perm_user = User.objects.create_user(
+            username="no_perm_user_remove",
+            email="no_perm_remove@example.com",
+            password="testpass",
+        )
+        no_perm_user.groups.clear()
+
+        self.client.force_authenticate(user=no_perm_user)
+        response = self.client.post(
+            reverse("api:unit-bulk-remove-label"),
+            {
+                "project_slug": self.component.project.slug,
+                "label_id": label.id,
+                "context_ids": context_ids,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+        # Clean up
+        no_perm_user.delete()
+
     def test_create_label(self) -> None:
         self.do_request(
             "api:project-labels",

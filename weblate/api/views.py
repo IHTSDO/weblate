@@ -2353,6 +2353,95 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin, DestroyModelM
         
         return Response({"status": "success"}, status=HTTP_200_OK)
 
+    @extend_schema(
+        description="Remove a label from multiple units by context IDs within a project.",
+        methods=["post"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "project_slug": {"type": "string", "description": "Project slug"},
+                    "label_id": {"type": "integer", "description": "Label ID to remove"},
+                    "context_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Array of context IDs to match units",
+                    },
+                },
+                "required": ["project_slug", "label_id", "context_ids"],
+            }
+        },
+        responses={
+            200: {
+                "description": "Bulk operation completed",
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "example": "success"},
+                },
+            }
+        },
+    )
+    @action(detail=False, methods=["post"])
+    def bulk_remove_label(self, request, *args, **kwargs):
+        """Remove a label from multiple units identified by context IDs within a project."""
+        user = request.user
+
+        project_slug = request.data.get("project_slug")
+        label_id = request.data.get("label_id")
+        context_ids = request.data.get("context_ids")
+
+        if not all([project_slug, label_id, context_ids]):
+            raise ValidationError(
+                {"error": "Missing required fields: project_slug, label_id, context_ids"}
+            )
+
+        if not isinstance(context_ids, list):
+            raise ValidationError({"context_ids": "Expected a list of context IDs"})
+
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            raise ValidationError({"project_slug": "Project not found"})
+
+        if not user.has_perm("unit.edit", project):
+            self.permission_denied(request, "Can not edit units in this project")
+
+        try:
+            label = project.label_set.get(id=label_id)
+        except Label.DoesNotExist:
+            raise ValidationError(
+                {
+                    "label_id": f"Label with ID {label_id} was not found in project {project_slug}"
+                }
+            )
+
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            through_table = Unit.labels.through._meta.db_table
+            unit_table = Unit._meta.db_table
+            translation_table = Translation._meta.db_table
+            component_table = Component._meta.db_table
+            project_table = Project._meta.db_table
+
+            sql = f"""
+            DELETE FROM {through_table}
+            WHERE label_id = %s
+            AND unit_id IN (
+                SELECT u.id
+                FROM {unit_table} u
+                JOIN {translation_table} t ON u.translation_id = t.id
+                JOIN {component_table} c ON t.component_id = c.id
+                JOIN {project_table} p ON c.project_id = p.id
+                WHERE p.slug = %s
+                AND u.context = ANY(%s)
+            )
+            """
+            cursor.execute(sql, [label_id, project_slug, context_ids])
+
+        return Response({"status": "success"}, status=HTTP_200_OK)
+
+
 @extend_schema_view(
     list=extend_schema(description="Return a list of screenshot string information."),
     retrieve=extend_schema(
