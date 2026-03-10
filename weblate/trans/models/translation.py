@@ -1045,9 +1045,13 @@ class Translation(
         return self.component.suggestion_autoaccept
 
     def log_upload_not_found(
-        self, not_found_log: list[str], unit: TranslationUnit
+        self,
+        not_found_log: list[str],
+        unit: TranslationUnit,
+        *,
+        display: str | None = None,
     ) -> None:
-        not_found_log.append(unit.source)
+        not_found_log.append(display or unit.source or unit.context or "?")
 
     def show_upload_not_found(
         self,
@@ -1113,6 +1117,14 @@ class Translation(
         for set_fuzzy, unit2 in store2.iterate_merge(fuzzy):
             try:
                 unit = unit_set.get_unit(unit2)
+            except Unit.AmbiguousContextError:
+                self.log_debug(
+                    "Multiple units found for context %s, skipping", unit2.context
+                )
+                self.log_upload_not_found(
+                    not_found_log, unit2, display=unit2.context or "?"
+                )
+                continue
             except Unit.DoesNotExist:
                 self.log_upload_not_found(not_found_log, unit2)
                 continue
@@ -1168,6 +1180,14 @@ class Translation(
             # Grab database unit
             try:
                 dbunit = unit_set.get_unit(unit)
+            except Unit.AmbiguousContextError:
+                self.log_debug(
+                    "Multiple units found for context %s, skipping", unit.context
+                )
+                self.log_upload_not_found(
+                    not_found_log, unit, display=unit.context or "?"
+                )
+                continue
             except Unit.DoesNotExist:
                 self.log_upload_not_found(not_found_log, unit)
                 continue

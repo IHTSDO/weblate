@@ -318,8 +318,21 @@ class UnitQuerySet(models.QuerySet):
         ).order_by(choice)
 
     @cached_property
+    def _unit_lookups(self):
+        source_context = {}
+        by_context = {}
+        for unit in self:
+            source_context[(unit.context, unit.source)] = unit
+            by_context.setdefault(unit.context, []).append(unit)
+        return source_context, by_context
+
+    @property
     def source_context_lookup(self):
-        return {(unit.context, unit.source): unit for unit in self}
+        return self._unit_lookups[0]
+
+    @property
+    def context_lookup(self):
+        return self._unit_lookups[1]
 
     @cached_property
     def source_lookup(self) -> dict[str, Unit]:
@@ -350,6 +363,18 @@ class UnitQuerySet(models.QuerySet):
                 return self.source_context_lookup[match, source]
             except KeyError:
                 continue
+
+        # Context-only fallback for uploads without source column (e.g. context,target CSV).
+        # Try when (context, source) failed and context is present; source may be empty
+        # or wrong (e.g. CSV parser sometimes maps target to source).
+        if context:
+            matches = self.context_lookup.get(context, [])
+            if len(matches) == 1:
+                return matches[0]
+            if len(matches) > 1:
+                raise Unit.AmbiguousContextError(
+                    "Multiple units found for context"
+                ) from None
 
         # Fallback to source string only lookup
         try:
@@ -2067,3 +2092,10 @@ class Unit(models.Model, LoggerMixin):
             and is_valid_memory_entry(source=self.source, target=self.target)
         ):
             handle_unit_translation_change(self, user)
+
+
+class AmbiguousContextError(Unit.DoesNotExist):
+    """Raised when context-only lookup finds multiple units."""
+
+
+Unit.AmbiguousContextError = AmbiguousContextError
